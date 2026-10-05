@@ -6,12 +6,14 @@ import {
     createFile,
     updateFile,
     deleteFile,
-    uploadFile
+    uploadFile,
+    downloadFile
 } from '../controllers/file.controller.js';
 
 const fileRoutes = new Hono();
 
 fileRoutes.get('/', getFiles);
+fileRoutes.get('/:id/download', downloadFile);
 fileRoutes.get('/:id', getFile);
 
 fileRoutes.post('/', createFile);

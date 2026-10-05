@@ -15,7 +15,6 @@ export const saveFile = async (file) => {
     const extension = path.extname(file.name);
     const storedFileName = `${fileId}${extension}`;
     const filePath = path.join(storageDirectory, storedFileName);
-
     const buffer = Buffer.from(await file.arrayBuffer());
 
     await fs.writeFile(filePath, buffer);
@@ -28,4 +27,21 @@ export const saveFile = async (file) => {
         size: buffer.length,
         type: file.type
     };
+};
+
+export const readStoredFile = async (filePath) => {
+    return await fs.readFile(filePath);
+};
+
+export const deleteStoredFile = async (filePath) => {
+    try {
+        await fs.unlink(filePath);
+        return true;
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return false;
+        }
+
+        throw error;
+    }
 };
