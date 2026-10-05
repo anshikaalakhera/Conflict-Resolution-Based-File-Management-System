@@ -4,9 +4,10 @@ import {
     createNewFile,
     updateExistingFile,
     deleteFileById,
-    saveFile
+    createUploadedFileRecord
 } from '../services/file.service.js';
 
+import { saveFile } from '../services/storage.service.js';
 
 export const getFiles = async (c) => {
     try {
@@ -89,7 +90,6 @@ export const updateFile = async (c) => {
 export const uploadFile = async (c) => {
     try {
         const body = await c.req.parseBody();
-
         const file = body.file;
 
         if (!file || typeof file === 'string') {
@@ -100,9 +100,19 @@ export const uploadFile = async (c) => {
 
         const storedFile = await saveFile(file);
 
+        const ownerId = 1;
+
+        const databaseFile = await createUploadedFileRecord({
+            fileName: storedFile.originalName,
+            ownerId,
+            fileSize: storedFile.size,
+            filePath: storedFile.path,
+            mimeType: storedFile.type || 'application/octet-stream'
+        });
+
         return c.json({
             message: 'File uploaded successfully',
-            file: storedFile
+            file: databaseFile
         }, 201);
 
     } catch (error) {
