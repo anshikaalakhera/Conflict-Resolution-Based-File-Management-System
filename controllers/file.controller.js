@@ -7,7 +7,11 @@ import {
     createUploadedFileRecord
 } from '../services/file.service.js';
 
-import { saveFile } from '../services/storage.service.js';
+import {
+    saveFile,
+    readStoredFile,
+    deleteStoredFile
+}from '../services/storage.service.js';
 
 export const getFiles = async (c) => {
     try {
@@ -73,10 +77,17 @@ export const updateFile = async (c) => {
 
         const file = await updateExistingFile(id, body);
 
+        if (!file) {
+            return c.json({
+                message: 'File not found'
+            }, 404);
+        }
+
         return c.json({
             message: 'File updated successfully',
             file
         });
+
     } catch (error) {
         console.error('Error updating file:', error);
 
@@ -129,17 +140,59 @@ export const deleteFile = async (c) => {
     try {
         const id = c.req.param('id');
 
+        const file = await getFileById(id);
+
+        if (!file) {
+            return c.json({
+                message: 'File not found'
+            }, 404);
+        }
+
+        await deleteStoredFile(file.file_path);
+
         const result = await deleteFileById(id);
 
         return c.json({
             message: 'File deleted successfully',
             result
         });
+
     } catch (error) {
         console.error('Error deleting file:', error);
 
         return c.json({
             message: 'Failed to delete file',
+            error: error.message
+        }, 500);
+    }
+};
+
+export const downloadFile = async (c) => {
+    try {
+        const id = c.req.param('id');
+
+        const file = await getFileById(id);
+
+        if (!file) {
+            return c.json({
+                message: 'File not found'
+            }, 404);
+        }
+
+        const fileData = await readStoredFile(file.file_path);
+
+        return new Response(fileData, {
+            headers: {
+                'Content-Type': file.mime_type || 'application/octet-stream',
+                'Content-Disposition': `attachment; filename="${file.file_name}"`
+            }
+        });
+
+    } catch (error) {
+        console.error('Error downloading file:', error);
+
+        return c.json({
+            message: 'Failed to download file',
             error: error.message
         }, 500);
     }

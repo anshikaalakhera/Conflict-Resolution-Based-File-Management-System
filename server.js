@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
+import operationRoutes from './routes/operation.routes.js';
 import testRoutes from './routes/test.routes.js';
 import fileRoutes from './routes/file.routes.js';
 import { initializeStorage } from './services/storage.service.js';
@@ -15,6 +16,7 @@ app.get('/', (c) => {
 
 app.route('/api/test', testRoutes);
 app.route('/api/files', fileRoutes);
+app.route('/api/operations', operationRoutes);
 
 const port = 3000;
 
