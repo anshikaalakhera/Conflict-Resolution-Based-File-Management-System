@@ -82,16 +82,22 @@ export const updateExistingFile = async (id, data) => {
         status
     } = data;
 
+    const existingFile = await getFileById(id);
+
+    if (!existingFile) {
+        return null;
+    }
+
     await pool.query(
         `UPDATE FILES
          SET
             file_name = COALESCE(?, file_name),
-            folder_id = ?,
+            folder_id = COALESCE(?, folder_id),
             status = COALESCE(?, status)
          WHERE file_id = ?`,
         [
             file_name || null,
-            folder_id || null,
+            folder_id ?? null,
             status || null,
             id
         ]
