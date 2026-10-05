@@ -1,31 +1,23 @@
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
+import { Hono } from 'hono';
 
-const storageDirectory = path.join(process.cwd(), 'storage');
+import {
+    getFiles,
+    getFile,
+    createFile,
+    updateFile,
+    deleteFile,
+    uploadFile
+} from '../controllers/file.controller.js';
 
-export const initializeStorage = async () => {
-    await fs.mkdir(storageDirectory, { recursive: true });
-};
+const fileRoutes = new Hono();
 
-export const saveFile = async (file) => {
-    await initializeStorage();
+fileRoutes.get('/', getFiles);
+fileRoutes.get('/:id', getFile);
 
-    const fileId = crypto.randomUUID();
-    const extension = path.extname(file.name);
-    const storedFileName = `${fileId}${extension}`;
-    const filePath = path.join(storageDirectory, storedFileName);
+fileRoutes.post('/', createFile);
+fileRoutes.post('/upload', uploadFile);
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+fileRoutes.put('/:id', updateFile);
+fileRoutes.delete('/:id', deleteFile);
 
-    await fs.writeFile(filePath, buffer);
-
-    return {
-        id: fileId,
-        originalName: file.name,
-        storedName: storedFileName,
-        path: filePath,
-        size: buffer.length,
-        type: file.type
-    };
-};
+export default fileRoutes;
