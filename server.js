@@ -5,6 +5,7 @@ import operationRoutes from './routes/operation.routes.js';
 import testRoutes from './routes/test.routes.js';
 import fileRoutes from './routes/file.routes.js';
 import { initializeStorage } from './services/storage.service.js';
+import osRoutes from './routes/os.routes.js';
 
 const app = new Hono();
 
@@ -17,6 +18,7 @@ app.get('/', (c) => {
 app.route('/api/test', testRoutes);
 app.route('/api/files', fileRoutes);
 app.route('/api/operations', operationRoutes);
+app.route('/api', osRoutes);
 
 const port = 3000;
 
