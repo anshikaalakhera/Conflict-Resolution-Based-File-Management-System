@@ -6,6 +6,7 @@ import testRoutes from './routes/test.routes.js';
 import fileRoutes from './routes/file.routes.js';
 import { initializeStorage } from './services/storage.service.js';
 import osRoutes from './routes/os.routes.js';
+import { restoreQueuedProcesses } from './services/os.service.js';
 
 const app = new Hono();
 
@@ -22,7 +23,8 @@ app.route('/api', osRoutes);
 
 const port = 3000;
 
-await initializeStorage(); 
+await initializeStorage();
+await restoreQueuedProcesses();
 
 console.log(`Server running on http://localhost:${port}`);
 

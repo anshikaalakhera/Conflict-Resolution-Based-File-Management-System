@@ -1,6 +1,12 @@
+
 import pool from '../config/db.js';
 import { osKernel } from './osKernel.js';
-import { readStoredFile } from './storage.service.js';
+import {
+    readStoredFile,
+    deleteStoredFile
+} from './storage.service.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 const VALID_OPERATIONS = new Set([
     'UPLOAD',
@@ -9,6 +15,12 @@ const VALID_OPERATIONS = new Set([
     'DELETE',
     'MOVE',
     'SHARE'
+]);
+
+const EXECUTABLE_OPERATIONS = new Set([
+    'UPLOAD',
+    'DOWNLOAD',
+    'MOVE'
 ]);
 
 const mapProcessState = (state) => {
@@ -28,24 +40,92 @@ const mapProcessState = (state) => {
     }
 };
 
+const parseOperationDetails = (details) => {
+    if (details == null || details === '') {
+        return {};
+    }
+
+    if (typeof details === 'string') {
+        try {
+            details = JSON.parse(details);
+        } catch {
+            throw new Error('Operation details contain invalid JSON');
+        }
+    }
+
+    if (
+        typeof details !== 'object' ||
+        Array.isArray(details)
+    ) {
+        throw new Error('Operation details must be a JSON object');
+    }
+
+    return details;
+};
+
+const validatePriority = (value) => {
+    const priority = Number(value ?? 1);
+
+    if (
+        !Number.isInteger(priority) ||
+        priority < 1 ||
+        priority > 10
+    ) {
+        throw new Error(
+            'Operation priority must be an integer from 1 to 10'
+        );
+    }
+
+    return priority;
+};
+
+const validatePositiveId = (value, label) => {
+    const id = Number(value);
+
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error(`${label} must be a positive integer`);
+    }
+
+    return id;
+};
+
+const getOsProcessBurstTime = (process) => {
+    const burstTime = Number(
+        process.burstTime ?? process.toJSON().burstTime
+    );
+
+    if (!Number.isFinite(burstTime) || burstTime <= 0) {
+        throw new Error('Invalid process CPU burst time');
+    }
+
+    return burstTime;
+};
+
+/**
+ * Submit a pending database operation to the OS scheduler.
+ *
+ * This function creates the OS process and its corresponding database
+ * process record. Actual file-operation execution occurs in
+ * dispatchNextProcess().
+ */
 export const executeFileOperation = async (operation) => {
     if (!operation) {
         throw new Error('Operation not found');
     }
 
-    const operationId = Number(operation.operation_id);
-
-    if (!Number.isInteger(operationId) || operationId <= 0) {
-        throw new Error('Invalid operation ID');
-    }
+    const operationId = validatePositiveId(
+        operation.operation_id,
+        'Operation ID'
+    );
 
     const connection = await pool.getConnection();
+    let transactionOpen = false;
     let submittedProcess = null;
 
     try {
         await connection.beginTransaction();
+        transactionOpen = true;
 
-        // Read the latest database status, preventing duplicate submissions.
         const [rows] = await connection.query(
             `SELECT *
              FROM OPERATIONS
@@ -62,6 +142,7 @@ export const executeFileOperation = async (operation) => {
 
         if (current.status === 'COMPLETED') {
             await connection.commit();
+            transactionOpen = false;
 
             return {
                 success: true,
@@ -87,6 +168,7 @@ export const executeFileOperation = async (operation) => {
             );
 
             await connection.commit();
+            transactionOpen = false;
 
             return {
                 success: true,
@@ -113,66 +195,72 @@ export const executeFileOperation = async (operation) => {
             throw new Error('Unsupported operation type');
         }
 
-        let details = current.details;
+        if (!EXECUTABLE_OPERATIONS.has(operationType)) {
+            throw new Error(
+                `Execution is not implemented for ${operationType} yet.`
+            );
+        }
 
-        if (typeof details === 'string') {
-            try {
-                details = JSON.parse(details);
-            } catch {
-                throw new Error('Operation details contain invalid JSON');
+        const details = parseOperationDetails(current.details);
+        const priority = validatePriority(current.priority);
+
+        if (operationType === 'MOVE') {
+            validatePositiveId(
+                details.destination_folder_id,
+                'MOVE destination_folder_id'
+            );
+        }
+
+        if (operationType === 'UPLOAD') {
+            if (
+                typeof details.stagedFilePath !== 'string' ||
+                !details.stagedFilePath.trim()
+            ) {
+                throw new Error(
+                    'UPLOAD requires details.stagedFilePath'
+                );
             }
+
+            if (
+                typeof details.originalName !== 'string' ||
+                !details.originalName.trim() ||
+                path.basename(details.originalName) !== details.originalName
+            ) {
+                throw new Error('UPLOAD requires a valid originalName');
+            }
+        } else if (current.file_id == null) {
+            throw new Error(`${operationType} requires a file_id`);
         }
 
-        const priority = Number(current.priority ?? 1);
+        const burstTime = details.burstTime === undefined
+            ? undefined
+            : Number(details.burstTime);
 
-        if (!Number.isInteger(priority) || priority < 1 || priority > 10) {
-            throw new Error('Operation priority must be an integer from 1 to 10');
+        if (
+            burstTime !== undefined &&
+            (!Number.isFinite(burstTime) || burstTime <= 0)
+        ) {
+            throw new Error(
+                'Operation burstTime must be a positive number'
+            );
         }
-if (!['DOWNLOAD', 'MOVE'].includes(operationType)) {
-    throw new Error(
-        `Execution is not implemented for ${operationType} yet.`
-    );
-}
 
-if (operationType === 'MOVE') {
-    const destinationFolderId = Number(details?.destination_folder_id);
-
-    if (
-        !Number.isInteger(destinationFolderId) ||
-        destinationFolderId <= 0
-    ) {
-        throw new Error(
-            'MOVE requires details.destination_folder_id to be a positive integer'
-        );
-    }
-}
-        // Submit to the existing OS scheduler.
         submittedProcess = osKernel.submitOperation({
             name: `Operation-${operationId}`,
-            userId: current.user_id,
-            fileId: current.file_id ?? null,
+            userId: Number(current.user_id),
+            fileId: current.file_id == null
+                ? null
+                : Number(current.file_id),
             operation: operationType,
             priority,
-            ...(details?.burstTime !== undefined
-                ? { burstTime: Number(details.burstTime) }
-                : {})
+            ...(burstTime !== undefined ? { burstTime } : {})
         });
 
         const processData = submittedProcess.toJSON();
         const dbState = mapProcessState(processData.state);
         const pidAlias = `OS-${operationId}-${processData.id}`;
+        const actualBurstTime = getOsProcessBurstTime(submittedProcess);
 
-        const burstTime = Number(
-            processData.burstTime ??
-            submittedProcess.burstTime ??
-            10
-        );
-
-        if (!Number.isFinite(burstTime) || burstTime < 0) {
-            throw new Error('Invalid process CPU burst time');
-        }
-
-        // Save the OS process using the database's own process_id.
         const [insertResult] = await connection.query(
             `INSERT INTO PROCESSES
                 (operation_id, pid_alias, state, priority,
@@ -183,19 +271,27 @@ if (operationType === 'MOVE') {
                 pidAlias,
                 dbState,
                 priority,
-                burstTime,
+                actualBurstTime,
                 1024
             ]
         );
 
-        await connection.query(
+        const [operationUpdate] = await connection.query(
             `UPDATE OPERATIONS
              SET status = 'QUEUED'
-             WHERE operation_id = ?`,
+             WHERE operation_id = ?
+               AND status = 'PENDING'`,
             [operationId]
         );
 
+        if (operationUpdate.affectedRows !== 1) {
+            throw new Error(
+                'Could not queue the operation in the database'
+            );
+        }
+
         await connection.commit();
+        transactionOpen = false;
 
         return {
             success: true,
@@ -208,17 +304,27 @@ if (operationType === 'MOVE') {
             scheduler: osKernel.snapshot().algorithm
         };
     } catch (error) {
-        await connection.rollback();
+        if (transactionOpen) {
+            try {
+                await connection.rollback();
+            } catch {
+                // Preserve the original error.
+            }
 
-        // Avoid leaving a failed submission runnable in memory.
+            transactionOpen = false;
+        }
+
         if (submittedProcess) {
             try {
                 osKernel.fail(
                     submittedProcess.id,
-                    'Database persistence failed'
+                    error.message || 'Operation submission failed'
                 );
-            } catch {
-                // Preserve the original database/integration error.
+            } catch (kernelError) {
+                console.error(
+                    'OS process failure handling failed:',
+                    kernelError
+                );
             }
         }
 
@@ -229,6 +335,17 @@ if (operationType === 'MOVE') {
 };
 
 let dispatchInProgress = false;
+
+/**
+ * Dispatch and execute the next READY process selected by the OS scheduler.
+ *
+ * Supported operations:
+ * - UPLOAD
+ * - DOWNLOAD
+ * - MOVE
+ *
+ * Other operation types are rejected and marked FAILED.
+ */
 
 export const dispatchNextProcess = async () => {
     if (dispatchInProgress) {
@@ -243,12 +360,15 @@ export const dispatchNextProcess = async () => {
 
     let connection;
     let dispatchedProcess = null;
+    let candidateProcess = null;
     let databaseProcessId = null;
     let operationId = null;
+    let stagedUploadPath = null;
     let transactionOpen = false;
 
     try {
         connection = await pool.getConnection();
+
         await connection.beginTransaction();
         transactionOpen = true;
 
@@ -269,13 +389,15 @@ export const dispatchNextProcess = async () => {
         const candidate = snapshot.processes.find(
             (process) => process.id === nextOsProcessId
         );
-
+        candidateProcess = candidate;
         const match = candidate
             ? /^Operation-(\d+)$/.exec(candidate.name)
             : null;
 
         if (!match) {
-            throw new Error('Cannot identify the queued operation');
+            throw new Error(
+                'Cannot identify the queued operation'
+            );
         }
 
         operationId = Number(match[1]);
@@ -285,7 +407,8 @@ export const dispatchNextProcess = async () => {
         const [processRows] = await connection.query(
             `SELECT process_id, state
              FROM PROCESSES
-             WHERE operation_id = ? AND pid_alias = ?
+             WHERE operation_id = ?
+               AND pid_alias = ?
              FOR UPDATE`,
             [operationId, pidAlias]
         );
@@ -301,14 +424,14 @@ export const dispatchNextProcess = async () => {
 
         databaseProcessId = processRows[0].process_id;
 
-const [operationRows] = await connection.query(
-    `SELECT operation_id, user_id, file_id,
-            operation_type, status, details
-     FROM OPERATIONS
-     WHERE operation_id = ?
-     FOR UPDATE`,
-    [operationId]
-);
+        const [operationRows] = await connection.query(
+            `SELECT operation_id, user_id, file_id,
+                    operation_type, status, details
+             FROM OPERATIONS
+             WHERE operation_id = ?
+             FOR UPDATE`,
+            [operationId]
+        );
 
         const operation = operationRows[0];
 
@@ -316,284 +439,514 @@ const [operationRows] = await connection.query(
             throw new Error('Operation is not QUEUED');
         }
 
+        const operationType = String(
+            operation.operation_type || ''
+        ).toUpperCase();
 
-if (!['DOWNLOAD', 'MOVE'].includes(operation.operation_type)) {
-    const message =
-        `Execution is not implemented for ${operation.operation_type} yet`;
+        if (!EXECUTABLE_OPERATIONS.has(operationType)) {
+            const message =
+                `Execution is not implemented for ${operationType} yet`;
 
-    // Remove this process from the ready queue by dispatching and failing it.
-    dispatchedProcess = osKernel.dispatch();
+            dispatchedProcess = osKernel.dispatch();
 
-    if (
-        !dispatchedProcess ||
-        dispatchedProcess.id !== candidate.id
-    ) {
-        throw new Error('Could not dispatch the unsupported process safely');
-    }
+            if (
+                !dispatchedProcess ||
+                dispatchedProcess.id !== candidate.id
+            ) {
+                throw new Error(
+                    'Could not dispatch the unsupported process safely'
+                );
+            }
 
-    osKernel.fail(dispatchedProcess.id, message);
+            osKernel.fail(dispatchedProcess.id, message);
 
-    const [processUpdate] = await connection.query(
-        `UPDATE PROCESSES
-         SET state = 'KILLED',
-             finished_at = CURRENT_TIMESTAMP
-         WHERE process_id = ? AND state = 'READY'`,
-        [databaseProcessId]
-    );
+            const [processUpdate] = await connection.query(
+                `UPDATE PROCESSES
+                 SET state = 'KILLED',
+                     finished_at = CURRENT_TIMESTAMP
+                 WHERE process_id = ?
+                   AND state = 'READY'`,
+                [databaseProcessId]
+            );
 
-    const [operationUpdate] = await connection.query(
-        `UPDATE OPERATIONS
-         SET status = 'FAILED',
-             completed_at = CURRENT_TIMESTAMP
-         WHERE operation_id = ? AND status = 'QUEUED'`,
-        [operationId]
-    );
+            const [operationUpdate] = await connection.query(
+                `UPDATE OPERATIONS
+                 SET status = 'FAILED',
+                     completed_at = CURRENT_TIMESTAMP
+                 WHERE operation_id = ?
+                   AND status = 'QUEUED'`,
+                [operationId]
+            );
 
-    if (
-        processUpdate.affectedRows !== 1 ||
-        operationUpdate.affectedRows !== 1
-    ) {
-        throw new Error('Could not persist the rejected operation state');
-    }
+            if (
+                processUpdate.affectedRows !== 1 ||
+                operationUpdate.affectedRows !== 1
+            ) {
+                throw new Error(
+                    'Could not persist the rejected operation state'
+                );
+            }
 
-    await connection.commit();
-    transactionOpen = false;
+            await connection.commit();
+            transactionOpen = false;
 
-    return {
-        success: false,
-        status: 'FAILED',
-        operationId,
-        databaseProcessId,
-        osProcessId: dispatchedProcess.id,
-        message
-    };
-}
+            return {
+                success: false,
+                status: 'FAILED',
+                operationId,
+                databaseProcessId,
+                osProcessId: dispatchedProcess.id,
+                message
+            };
+        }
 
-if (operation.operation_type === 'MOVE') {
-    if (operation.file_id == null) {
-        throw new Error('MOVE requires a file_id');
-    }
+        const details = parseOperationDetails(operation.details);
 
-    let details = operation.details;
+        /*
+         * UPLOAD
+         */
+        if (operationType === 'UPLOAD') {
+            const originalName = details.originalName;
+            const mimeType =
+                details.mimeType || 'application/octet-stream';
 
-    if (typeof details === 'string') {
-        details = JSON.parse(details);
-    }
+            const stagedFilePath = path.resolve(
+                String(details.stagedFilePath || '')
+            );
 
-    const destinationFolderId = Number(
-        details?.destination_folder_id
-    );
+            const storageDirectory = path.resolve(
+                process.cwd(),
+                'storage'
+            );
 
-    if (
-        !Number.isInteger(destinationFolderId) ||
-        destinationFolderId <= 0
-    ) {
-        throw new Error(
-            'MOVE requires a valid destination_folder_id'
-        );
-    }
+            if (
+                typeof details.originalName !== 'string' ||
+                !originalName.trim() ||
+                path.basename(originalName) !== originalName
+            ) {
+                throw new Error(
+                    'UPLOAD requires a valid originalName'
+                );
+            }
 
-    // Lock and validate the file.
-    const [fileRows] = await connection.query(
-        `SELECT file_id, file_name, owner_id, folder_id, status
-         FROM FILES
-         WHERE file_id = ?
-         FOR UPDATE`,
-        [operation.file_id]
-    );
+            const relativeStagedPath = path.relative(
+                storageDirectory,
+                stagedFilePath
+            );
 
-    if (!fileRows.length) {
-        throw new Error('The file associated with MOVE was not found');
-    }
+            if (
+                !relativeStagedPath ||
+                relativeStagedPath === '..' ||
+                relativeStagedPath.startsWith(`..${path.sep}`) ||
+                path.isAbsolute(relativeStagedPath)
+            ) {
+                throw new Error(
+                    'UPLOAD path must be inside the storage directory'
+                );
+            }
 
-    const file = fileRows[0];
+            stagedUploadPath = stagedFilePath;
 
-    if (Number(file.owner_id) !== Number(operation.user_id)) {
-        throw new Error('Only the file owner can move this file');
-    }
+            const stagedFile = await fs.stat(stagedFilePath);
 
-    if (file.status !== 'ACTIVE') {
-        throw new Error('Only ACTIVE files can be moved');
-    }
+            if (!stagedFile.isFile()) {
+                throw new Error('Staged upload is not a file');
+            }
 
-    // Validate that the destination folder belongs to the same owner.
-    const [folderRows] = await connection.query(
-        `SELECT folder_id, owner_id
-         FROM FOLDERS
-         WHERE folder_id = ?
-         FOR UPDATE`,
-        [destinationFolderId]
-    );
+            if (
+                Number(details.fileSize) !== stagedFile.size ||
+                !Number.isInteger(Number(operation.user_id)) ||
+                Number(operation.user_id) <= 0
+            ) {
+                throw new Error('UPLOAD metadata is invalid');
+            }
 
-    if (!folderRows.length) {
-        throw new Error('Destination folder was not found');
-    }
+            dispatchedProcess = osKernel.dispatch();
 
-    if (
-        Number(folderRows[0].owner_id) !== Number(file.owner_id)
-    ) {
-        throw new Error(
-            'Destination folder must belong to the file owner'
-        );
-    }
+            if (
+                !dispatchedProcess ||
+                dispatchedProcess.id !== candidate.id
+            ) {
+                throw new Error(
+                    'Could not dispatch the expected UPLOAD process'
+                );
+            }
 
-    // Dispatch the process selected by the existing scheduler.
-    dispatchedProcess = osKernel.dispatch();
+            const [processStart] = await connection.query(
+                `UPDATE PROCESSES
+                 SET state = 'RUNNING',
+                     started_at = COALESCE(
+                         started_at,
+                         CURRENT_TIMESTAMP
+                     )
+                 WHERE process_id = ?
+                   AND state = 'READY'`,
+                [databaseProcessId]
+            );
 
-    if (
-        !dispatchedProcess ||
-        dispatchedProcess.id !== candidate.id
-    ) {
-        throw new Error(
-            'The scheduler could not dispatch the expected MOVE process'
-        );
-    }
+            const [operationStart] = await connection.query(
+                `UPDATE OPERATIONS
+                 SET status = 'EXECUTING'
+                 WHERE operation_id = ?
+                   AND status = 'QUEUED'`,
+                [operationId]
+            );
 
-    const [processStart] = await connection.query(
-        `UPDATE PROCESSES
-         SET state = 'RUNNING',
-             started_at = COALESCE(started_at, CURRENT_TIMESTAMP)
-         WHERE process_id = ? AND state = 'READY'`,
-        [databaseProcessId]
-    );
+            if (
+                processStart.affectedRows !== 1 ||
+                operationStart.affectedRows !== 1
+            ) {
+                throw new Error(
+                    'Could not start the UPLOAD operation safely'
+                );
+            }
 
-    const [operationStart] = await connection.query(
-        `UPDATE OPERATIONS
-         SET status = 'EXECUTING'
-         WHERE operation_id = ? AND status = 'QUEUED'`,
-        [operationId]
-    );
+            await connection.commit();
+            transactionOpen = false;
 
-    if (
-        processStart.affectedRows !== 1 ||
-        operationStart.affectedRows !== 1
-    ) {
-        throw new Error('Could not start the MOVE operation safely');
-    }
+            // Insert the file record only when the scheduler executes UPLOAD.
+            await connection.beginTransaction();
+            transactionOpen = true;
 
-    await connection.commit();
-    transactionOpen = false;
+            const [fileInsert] = await connection.query(
+                `INSERT INTO FILES
+                    (file_name, owner_id, file_size_bytes,
+                     file_path, mime_type)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [
+                    originalName,
+                    Number(operation.user_id),
+                    stagedFile.size,
+                    stagedFilePath,
+                    mimeType
+                ]
+            );
 
-    // Apply the move and record completion transactionally.
-    await connection.beginTransaction();
-    transactionOpen = true;
+            const fileId = fileInsert.insertId;
 
-    const [fileUpdate] = await connection.query(
-        `UPDATE FILES
-         SET folder_id = ?
-         WHERE file_id = ?
-           AND owner_id = ?
-           AND status = 'ACTIVE'`,
-        [
-            destinationFolderId,
-            operation.file_id,
-            operation.user_id
-        ]
-    );
+            const [processFinish] = await connection.query(
+                `UPDATE PROCESSES
+                 SET state = 'TERMINATED',
+                     finished_at = CURRENT_TIMESTAMP
+                 WHERE process_id = ?
+                   AND state = 'RUNNING'`,
+                [databaseProcessId]
+            );
 
-    if (fileUpdate.affectedRows !== 1) {
-        throw new Error('Could not update the file destination');
-    }
+            const [operationFinish] = await connection.query(
+                `UPDATE OPERATIONS
+                 SET file_id = ?,
+                     status = 'COMPLETED',
+                     completed_at = CURRENT_TIMESTAMP
+                 WHERE operation_id = ?
+                   AND status = 'EXECUTING'`,
+                [fileId, operationId]
+            );
 
-    osKernel.clock.advance(dispatchedProcess.burstTime);
+            if (
+                processFinish.affectedRows !== 1 ||
+                operationFinish.affectedRows !== 1
+            ) {
+                throw new Error(
+                    'Could not persist UPLOAD completion'
+                );
+            }
 
-    const completedProcess = osKernel.complete(
-        dispatchedProcess.id
-    );
+            osKernel.clock.advance(
+                getOsProcessBurstTime(dispatchedProcess)
+            );
 
-    const [processFinish] = await connection.query(
-        `UPDATE PROCESSES
-         SET state = 'TERMINATED',
-             finished_at = CURRENT_TIMESTAMP
-         WHERE process_id = ? AND state = 'RUNNING'`,
-        [databaseProcessId]
-    );
+            const completedProcess = osKernel.complete(
+                dispatchedProcess.id
+            );
 
-    const [operationFinish] = await connection.query(
-        `UPDATE OPERATIONS
-         SET status = 'COMPLETED',
-             completed_at = CURRENT_TIMESTAMP
-         WHERE operation_id = ? AND status = 'EXECUTING'`,
-        [operationId]
-    );
+            await connection.commit();
+            transactionOpen = false;
 
-    if (
-        processFinish.affectedRows !== 1 ||
-        operationFinish.affectedRows !== 1
-    ) {
-        throw new Error('Could not persist MOVE completion');
-    }
+            return {
+                success: true,
+                status: 'COMPLETED',
+                operationId,
+                databaseProcessId,
+                osProcessId: dispatchedProcess.id,
+                fileId,
+                fileName: originalName,
+                fileSize: stagedFile.size,
+                process: completedProcess
+            };
+        }
 
-    await connection.commit();
-    transactionOpen = false;
+        /*
+         * MOVE
+         */
+        if (operationType === 'MOVE') {
+            if (operation.file_id == null) {
+                throw new Error('MOVE requires a file_id');
+            }
 
-    return {
-        success: true,
-        status: 'COMPLETED',
-        operationId,
-        databaseProcessId,
-        osProcessId: dispatchedProcess.id,
-        fileId: file.file_id,
-        fileName: file.file_name,
-        previousFolderId: file.folder_id,
-        destinationFolderId,
-        process: completedProcess
-    };
-}
+            const destinationFolderId = validatePositiveId(
+                details.destination_folder_id,
+                'MOVE destination_folder_id'
+            );
 
+            const [fileRows] = await connection.query(
+                `SELECT file_id, file_name, owner_id,
+                        folder_id, status
+                 FROM FILES
+                 WHERE file_id = ?
+                 FOR UPDATE`,
+                [operation.file_id]
+            );
+
+            if (!fileRows.length) {
+                throw new Error(
+                    'The file associated with MOVE was not found'
+                );
+            }
+
+            const file = fileRows[0];
+
+            if (
+                Number(file.owner_id) !== Number(operation.user_id)
+            ) {
+                throw new Error(
+                    'Only the file owner can move this file'
+                );
+            }
+
+            if (file.status !== 'ACTIVE') {
+                throw new Error(
+                    'Only ACTIVE files can be moved'
+                );
+            }
+
+            const [folderRows] = await connection.query(
+                `SELECT folder_id, owner_id
+                 FROM FOLDERS
+                 WHERE folder_id = ?
+                 FOR UPDATE`,
+                [destinationFolderId]
+            );
+
+            if (!folderRows.length) {
+                throw new Error(
+                    'Destination folder was not found'
+                );
+            }
+
+            if (
+                Number(folderRows[0].owner_id) !==
+                Number(file.owner_id)
+            ) {
+                throw new Error(
+                    'Destination folder must belong to the file owner'
+                );
+            }
+
+            dispatchedProcess = osKernel.dispatch();
+
+            if (
+                !dispatchedProcess ||
+                dispatchedProcess.id !== candidate.id
+            ) {
+                throw new Error(
+                    'The scheduler could not dispatch the expected MOVE process'
+                );
+            }
+
+            const [processStart] = await connection.query(
+                `UPDATE PROCESSES
+                 SET state = 'RUNNING',
+                     started_at = COALESCE(
+                         started_at,
+                         CURRENT_TIMESTAMP
+                     )
+                 WHERE process_id = ?
+                   AND state = 'READY'`,
+                [databaseProcessId]
+            );
+
+            const [operationStart] = await connection.query(
+                `UPDATE OPERATIONS
+                 SET status = 'EXECUTING'
+                 WHERE operation_id = ?
+                   AND status = 'QUEUED'`,
+                [operationId]
+            );
+
+            if (
+                processStart.affectedRows !== 1 ||
+                operationStart.affectedRows !== 1
+            ) {
+                throw new Error(
+                    'Could not start the MOVE operation safely'
+                );
+            }
+
+            await connection.commit();
+            transactionOpen = false;
+
+            await connection.beginTransaction();
+            transactionOpen = true;
+
+            const [fileUpdate] = await connection.query(
+                `UPDATE FILES
+                 SET folder_id = ?
+                 WHERE file_id = ?
+                   AND owner_id = ?
+                   AND status = 'ACTIVE'`,
+                [
+                    destinationFolderId,
+                    operation.file_id,
+                    operation.user_id
+                ]
+            );
+
+            if (fileUpdate.affectedRows !== 1) {
+                throw new Error(
+                    'Could not update the file destination'
+                );
+            }
+
+            osKernel.clock.advance(
+                getOsProcessBurstTime(dispatchedProcess)
+            );
+
+            const completedProcess = osKernel.complete(
+                dispatchedProcess.id
+            );
+
+            const [processFinish] = await connection.query(
+                `UPDATE PROCESSES
+                 SET state = 'TERMINATED',
+                     finished_at = CURRENT_TIMESTAMP
+                 WHERE process_id = ?
+                   AND state = 'RUNNING'`,
+                [databaseProcessId]
+            );
+
+            const [operationFinish] = await connection.query(
+                `UPDATE OPERATIONS
+                 SET status = 'COMPLETED',
+                     completed_at = CURRENT_TIMESTAMP
+                 WHERE operation_id = ?
+                   AND status = 'EXECUTING'`,
+                [operationId]
+            );
+
+            if (
+                processFinish.affectedRows !== 1 ||
+                operationFinish.affectedRows !== 1
+            ) {
+                throw new Error(
+                    'Could not persist MOVE completion'
+                );
+            }
+
+            await connection.commit();
+            transactionOpen = false;
+
+            return {
+                success: true,
+                status: 'COMPLETED',
+                operationId,
+                databaseProcessId,
+                osProcessId: dispatchedProcess.id,
+                fileId: file.file_id,
+                fileName: file.file_name,
+                previousFolderId: file.folder_id,
+                destinationFolderId,
+                process: completedProcess
+            };
+        }
+
+        /*
+         * DOWNLOAD
+         */
         if (operation.file_id == null) {
             throw new Error('DOWNLOAD requires a file_id');
         }
 
         const [fileRows] = await connection.query(
-            `SELECT file_id, file_name, file_path
+            `SELECT file_id, file_name, file_path, owner_id, status
              FROM FILES
-             WHERE file_id = ?`,
+             WHERE file_id = ?
+             FOR UPDATE`,
             [operation.file_id]
         );
 
         if (!fileRows.length) {
-            throw new Error('The file associated with this operation was not found');
+            throw new Error(
+                'The file associated with this operation was not found'
+            );
         }
 
         const file = fileRows[0];
 
-        // Dispatch the exact process that was checked above.
+        if (Number(file.owner_id) !== Number(operation.user_id)) {
+            throw new Error(
+                'Only the file owner can download this file'
+            );
+        }
+
+        if (file.status !== 'ACTIVE') {
+            throw new Error(
+                'Only ACTIVE files can be downloaded'
+            );
+        }
+
         dispatchedProcess = osKernel.dispatch();
 
         if (
             !dispatchedProcess ||
             dispatchedProcess.id !== candidate.id
         ) {
-            throw new Error('The scheduler could not dispatch the expected process');
+            throw new Error(
+                'The scheduler could not dispatch the expected DOWNLOAD process'
+            );
         }
 
-        await connection.query(
+        const [processStart] = await connection.query(
             `UPDATE PROCESSES
              SET state = 'RUNNING',
-                 started_at = COALESCE(started_at, CURRENT_TIMESTAMP)
-             WHERE process_id = ? AND state = 'READY'`,
+                 started_at = COALESCE(
+                     started_at,
+                     CURRENT_TIMESTAMP
+                 )
+             WHERE process_id = ?
+               AND state = 'READY'`,
             [databaseProcessId]
         );
 
-        await connection.query(
+        const [operationStart] = await connection.query(
             `UPDATE OPERATIONS
              SET status = 'EXECUTING'
-             WHERE operation_id = ? AND status = 'QUEUED'`,
+             WHERE operation_id = ?
+               AND status = 'QUEUED'`,
             [operationId]
         );
+
+        if (
+            processStart.affectedRows !== 1 ||
+            operationStart.affectedRows !== 1
+        ) {
+            throw new Error(
+                'Could not start the DOWNLOAD operation safely'
+            );
+        }
 
         await connection.commit();
         transactionOpen = false;
 
-        // Execute the supported operation against the stored file.
         const fileData = await readStoredFile(file.file_path);
 
         if (!Buffer.isBuffer(fileData)) {
             throw new Error('Stored file could not be read');
         }
 
-        osKernel.clock.advance(dispatchedProcess.burstTime);
+        osKernel.clock.advance(
+            getOsProcessBurstTime(dispatchedProcess)
+        );
 
         const completedProcess = osKernel.complete(
             dispatchedProcess.id
@@ -602,27 +955,31 @@ if (operation.operation_type === 'MOVE') {
         await connection.beginTransaction();
         transactionOpen = true;
 
-        const [processUpdate] = await connection.query(
+        const [processFinish] = await connection.query(
             `UPDATE PROCESSES
              SET state = 'TERMINATED',
                  finished_at = CURRENT_TIMESTAMP
-             WHERE process_id = ? AND state = 'RUNNING'`,
+             WHERE process_id = ?
+               AND state = 'RUNNING'`,
             [databaseProcessId]
         );
 
-        const [operationUpdate] = await connection.query(
+        const [operationFinish] = await connection.query(
             `UPDATE OPERATIONS
              SET status = 'COMPLETED',
                  completed_at = CURRENT_TIMESTAMP
-             WHERE operation_id = ? AND status = 'EXECUTING'`,
+             WHERE operation_id = ?
+               AND status = 'EXECUTING'`,
             [operationId]
         );
 
         if (
-            processUpdate.affectedRows !== 1 ||
-            operationUpdate.affectedRows !== 1
+            processFinish.affectedRows !== 1 ||
+            operationFinish.affectedRows !== 1
         ) {
-            throw new Error('Could not persist the completed operation state');
+            throw new Error(
+                'Could not persist DOWNLOAD completion'
+            );
         }
 
         await connection.commit();
@@ -634,6 +991,7 @@ if (operation.operation_type === 'MOVE') {
             operationId,
             databaseProcessId,
             osProcessId: dispatchedProcess.id,
+            fileId: file.file_id,
             fileName: file.file_name,
             bytesRead: fileData.length,
             process: completedProcess
@@ -645,64 +1003,202 @@ if (operation.operation_type === 'MOVE') {
             } catch {
                 // Preserve the original error.
             }
+
             transactionOpen = false;
         }
 
-        if (dispatchedProcess) {
+        // Fail the in-memory process, including validation failures
+        // that happen before normal dispatch.
+        const processToFail = dispatchedProcess || candidateProcess;
+
+        if (processToFail) {
             try {
-                osKernel.fail(
-                    dispatchedProcess.id,
-                    error.message || 'Operation execution failed'
+                const snapshot = osKernel.snapshot();
+                const currentProcess = snapshot.processes.find(
+                    (process) => process.id === processToFail.id
                 );
+
+                if (
+                    currentProcess &&
+                    !['COMPLETED', 'FAILED', 'ABORTED', 'TERMINATED', 'KILLED']
+                        .includes(currentProcess.state)
+                ) {
+                    osKernel.fail(
+                        processToFail.id,
+                        error.message || 'Operation execution failed'
+                    );
+                }
             } catch (kernelError) {
-                console.error('OS process failure handling failed:', kernelError);
+                console.error(
+                    'OS process failure handling failed:',
+                    kernelError
+                );
             }
+        }
 
-            if (connection) {
-                try {
-                    await connection.beginTransaction();
+        // Reconcile the database independently of whether dispatch occurred.
+        if (connection && operationId && databaseProcessId) {
+            try {
+                await connection.beginTransaction();
+                transactionOpen = true;
 
-                    if (databaseProcessId !== null) {
-                        await connection.query(
-                            `UPDATE PROCESSES
-                             SET state = 'KILLED',
-                                 finished_at = CURRENT_TIMESTAMP
-                             WHERE process_id = ?
-                               AND state IN ('READY', 'RUNNING')`,
-                            [databaseProcessId]
-                        );
-                    }
+                await connection.query(
+                    `UPDATE PROCESSES
+                     SET state = 'KILLED',
+                         finished_at = CURRENT_TIMESTAMP
+                     WHERE process_id = ?
+                       AND state IN ('READY', 'RUNNING')`,
+                    [databaseProcessId]
+                );
 
-                    if (operationId !== null) {
-                        await connection.query(
-                            `UPDATE OPERATIONS
-                             SET status = 'FAILED',
-                                 completed_at = CURRENT_TIMESTAMP
-                             WHERE operation_id = ?
-                               AND status IN ('QUEUED', 'EXECUTING')`,
-                            [operationId]
-                        );
-                    }
+                await connection.query(
+                    `UPDATE OPERATIONS
+                     SET status = 'FAILED',
+                         completed_at = CURRENT_TIMESTAMP
+                     WHERE operation_id = ?
+                       AND status IN ('QUEUED', 'EXECUTING')`,
+                    [operationId]
+                );
 
-                    await connection.commit();
-                } catch (reconciliationError) {
+                await connection.commit();
+                transactionOpen = false;
+            } catch (reconcileError) {
+                if (transactionOpen) {
                     try {
                         await connection.rollback();
                     } catch {
                         // Preserve the original error.
                     }
 
-                    console.error(
-                        'Could not reconcile failed operation:',
-                        reconciliationError
-                    );
+                    transactionOpen = false;
                 }
+
+                console.error(
+                    'Failed to reconcile operation state:',
+                    reconcileError
+                );
             }
         }
 
+        if (stagedUploadPath) {
+            try {
+                const [storedFiles] = await pool.query(
+                    `SELECT file_id
+                     FROM FILES
+                     WHERE file_path = ?
+                     LIMIT 1`,
+                    [stagedUploadPath]
+                );
+
+                // Never delete a file referenced by a database record.
+                if (storedFiles.length === 0) {
+                    await deleteStoredFile(stagedUploadPath);
+                }
+            } catch (cleanupError) {
+                console.error(
+                    'Could not clean up failed staged upload:',
+                    cleanupError
+                );
+            }
+        }
         throw error;
-    } finally {
-        if (connection) connection.release();
+    }finally {
+        if (connection) {
+            connection.release();
+        }
+
         dispatchInProgress = false;
     }
+};
+
+/**
+ * Restore READY database processes into the in-memory OS scheduler
+ * after a server restart.
+ */
+export const restoreQueuedProcesses = async () => {
+    const [rows] = await pool.query(
+        `SELECT
+            o.operation_id,
+            p.process_id,
+            o.user_id,
+            o.file_id,
+            o.operation_type,
+            o.priority,
+            p.cpu_burst_time
+         FROM OPERATIONS o
+         INNER JOIN PROCESSES p
+             ON p.operation_id = o.operation_id
+         WHERE o.status = 'QUEUED'
+           AND p.state = 'READY'
+         ORDER BY p.created_at ASC, p.process_id ASC`
+    );
+
+    const existingNames = new Set(
+        osKernel.snapshot().processes.map(
+            (process) => process.name
+        )
+    );
+
+    let restoredCount = 0;
+
+    for (const row of rows) {
+        const operationId = Number(row.operation_id);
+        const processName = `Operation-${operationId}`;
+
+        if (existingNames.has(processName)) {
+            continue;
+        }
+
+        const restoredProcess = osKernel.submitOperation({
+            name: processName,
+            userId: Number(row.user_id),
+            fileId: row.file_id == null
+                ? null
+                : Number(row.file_id),
+            operation: row.operation_type,
+            arrivalTime: osKernel.clock.now(),
+            burstTime: Number(row.cpu_burst_time),
+            priority: Number(row.priority)
+        });
+
+        const [result] = await pool.query(
+            `UPDATE PROCESSES
+             SET pid_alias = ?
+             WHERE process_id = ?
+               AND operation_id = ?
+               AND state = 'READY'`,
+            [
+                `OS-${operationId}-${restoredProcess.id}`,
+                row.process_id,
+                operationId
+            ]
+        );
+
+        if (result.affectedRows !== 1) {
+            try {
+                osKernel.fail(
+                    restoredProcess.id,
+                    'Could not restore the database process alias'
+                );
+            } catch (kernelError) {
+                console.error(
+                    'Could not clean up restored OS process:',
+                    kernelError
+                );
+            }
+
+            throw new Error(
+                `Could not update the process alias for operation ${operationId}`
+            );
+        }
+
+        existingNames.add(processName);
+        restoredCount++;
+    }
+
+    console.log(
+        `Restored ${restoredCount} queued OS process(es).`
+    );
+
+    return restoredCount;
 };
