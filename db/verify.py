@@ -2,12 +2,17 @@
 ConflictCore Database Verification Runner
 Tests schema migration, seed ingestion, and executes CRUD & relational queries.
 """
+
+
+import os
 import subprocess
 import sys
 
-MYSQL_USER = "root"
-MYSQL_PASSWORD = "root"
-DB_NAME = "conflictcore_db"
+MYSQL_USER = os.getenv("DB_USER", "root")
+MYSQL_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME", "conflictcore_db")
+
+
 
 def run_cmd(args, stdin_file=None):
     cmd = ["mysql", f"-u{MYSQL_USER}", f"-p{MYSQL_PASSWORD}"]
@@ -23,7 +28,12 @@ def main():
     print("==================================================")
     print("ConflictCore DBMS Verification")
     print("==================================================")
-
+    
+     if not MYSQL_PASSWORD:
+        print("Error: DB_PASSWORD environment variable is not set.")
+        print("Please set DB_USER, DB_PASSWORD, and optionally DB_NAME.")
+        sys.exit(1)
+    
     # Optional Rebuild Flag check
     rebuild = "--rebuild" in sys.argv
     if rebuild:
