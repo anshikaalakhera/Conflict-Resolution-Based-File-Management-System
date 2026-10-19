@@ -392,7 +392,7 @@ async function createOperationAndProcessAtomically(userId, fileId, pidAlias) {
 
 ### Lock / Concurrency Contract (for Lock & Deadlock Developers)
 - **DBMS Responsibility:** Persistent storage of lock states (`SHARED`, `EXCLUSIVE`, `ACQUIRED`, `WAITING`, `RELEASED`, `ABORTED`) and fast queries via `retrieveActiveLocks(fileId)` and `retrieveWaitingLocks(fileId)`.
-- **Lock/Deadlock Module Responsibility:** 
+- **Lock/Deadlock Module Responsibility:**
   - Conflict arbitration (e.g. mutual exclusion rules).
   - Deadlock cycle detection and Wait-For Graph algorithms.
   - Victim selection, process abort, and lock release coordination.

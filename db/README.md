@@ -1,4 +1,4 @@
-# ConflictCore — DBMS / Data Access Layer
+`# ConflictCore — DBMS / Data Access Layer
 
 This module defines the relational database architecture, schema migrations, seed data, and data access repositories for **ConflictCore** (Conflict Resolution-Based Multi-User File Management System).
 
