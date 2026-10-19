@@ -1,10 +1,10 @@
-# ConflictCore — Integrated Workspace
+# ConflictCore â€” Integrated Workspace
 
 **Project:** Conflict Resolution-Based Multi-User File Management System
 **Course:** B.Tech CSE Project-Based Learning (PBL)
-**Team:** OSDBMS-V-2026-T206 — Graphic Era (Deemed to be University)
+**Team:** OSDBMS-V-2026-T206 â€” Graphic Era (Deemed to be University)
 
-## Overview
+### Overview
 
 ConflictCore combines Operating Systems and Database Management Systems principles into a multi-user file management system:
 - **Backend (Anshika Lakhera):** Node.js REST API with Hono, multipart file upload/download, storage management, and OS dispatching.
