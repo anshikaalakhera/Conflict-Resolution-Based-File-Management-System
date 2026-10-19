@@ -12,7 +12,7 @@ USE conflictcore_db;
 -- ############################################################################
 
 -- 1. Get all files belonging to a user (e.g. user_id = 2, 'shubham_k')
-SELECT 
+SELECT
     f.file_id,
     f.file_name,
     f.file_size_bytes,
@@ -28,7 +28,7 @@ WHERE u.user_id = 2
 ORDER BY f.file_name ASC;
 
 -- 2. Get files inside a folder (e.g. folder_id = 3, 'Kernel_Source')
-SELECT 
+SELECT
     f.file_id,
     f.file_name,
     f.file_size_bytes,
@@ -43,7 +43,7 @@ WHERE fo.folder_id = 3
 ORDER BY f.file_name ASC;
 
 -- 3. Get permissions for a file (e.g. file_id = 2, 'scheduler_core.c')
-SELECT 
+SELECT
     fp.permission_id,
     f.file_name,
     u.username AS authorized_user,
@@ -60,7 +60,7 @@ WHERE f.file_id = 2
 ORDER BY fp.permission_type ASC;
 
 -- 4. Get operations performed by a user (e.g. user_id = 2, 'shubham_k')
-SELECT 
+SELECT
     o.operation_id,
     u.username,
     COALESCE(f.file_name, '[No File Target]') AS target_file,
@@ -76,7 +76,7 @@ WHERE u.user_id = 2
 ORDER BY o.created_at DESC;
 
 -- 5. Get processes related to file operations
-SELECT 
+SELECT
     p.process_id,
     p.pid_alias,
     p.state AS process_state,
@@ -94,7 +94,7 @@ JOIN USERS u ON o.user_id = u.user_id
 ORDER BY p.process_id ASC;
 
 -- 6. Get active locks for a file (e.g. file_id = 2, 'scheduler_core.c')
-SELECT 
+SELECT
     fl.lock_id,
     f.file_name,
     p.pid_alias,
@@ -110,7 +110,7 @@ JOIN USERS u ON o.user_id = u.user_id
 WHERE fl.file_id = 2 AND fl.lock_status = 'ACQUIRED';
 
 -- 7. Get processes waiting for a file lock (demonstrates conflict detection)
-SELECT 
+SELECT
     fl.lock_id,
     f.file_name,
     p.pid_alias AS waiting_pid,
@@ -155,7 +155,7 @@ INSERT INTO FILE_LOCKS (lock_id, file_id, process_id, lock_type, lock_status)
 VALUES (99, 99, 99, 'EXCLUSIVE', 'WAITING');
 
 -- [R] READ: Verify inserted test record
-SELECT 
+SELECT
     u.username,
     fo.folder_name,
     f.file_name,
@@ -174,20 +174,20 @@ JOIN FILE_LOCKS fl ON fl.process_id = p.process_id
 WHERE u.user_id = 99;
 
 -- [U] UPDATE: Transition operation and lock states
-UPDATE OPERATIONS 
-SET status = 'EXECUTING' 
+UPDATE OPERATIONS
+SET status = 'EXECUTING'
 WHERE operation_id = 99;
 
-UPDATE PROCESSES 
-SET state = 'RUNNING', started_at = CURRENT_TIMESTAMP 
+UPDATE PROCESSES
+SET state = 'RUNNING', started_at = CURRENT_TIMESTAMP
 WHERE process_id = 99;
 
-UPDATE FILE_LOCKS 
-SET lock_status = 'ACQUIRED', acquired_at = CURRENT_TIMESTAMP 
+UPDATE FILE_LOCKS
+SET lock_status = 'ACQUIRED', acquired_at = CURRENT_TIMESTAMP
 WHERE lock_id = 99;
 
 -- Verify updated state
-SELECT 
+SELECT
     p.pid_alias,
     p.state AS updated_process_state,
     o.status AS updated_op_status,
@@ -209,5 +209,5 @@ DELETE FROM FOLDERS WHERE folder_id = 99;
 DELETE FROM USERS WHERE user_id = 99;
 
 -- Verify clean deletion
-SELECT COUNT(*) AS remaining_test_records 
+SELECT COUNT(*) AS remaining_test_records
 FROM USERS WHERE user_id = 99;

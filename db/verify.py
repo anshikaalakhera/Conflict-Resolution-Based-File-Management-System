@@ -23,7 +23,7 @@ def main():
     print("==================================================")
     print("ConflictCore DBMS Verification")
     print("==================================================")
-    
+
     # Optional Rebuild Flag check
     rebuild = "--rebuild" in sys.argv
     if rebuild:
