@@ -1,22 +1,96 @@
+
 # Dependencies
 node_modules/
+jspm_packages/
+web_modules/
+.pnpm-store/
 package-lock.json.bak
 
-# Environment & Secrets
+# Environment variables and secrets
 .env
-.env.local
+.env.*
 *.env
+!.env.example
 
-# Uploads & Runtime storage
+# Uploads and runtime storage
 backend/uploads/
 uploads/
+storage/
 
 # Logs
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# OS & Editor artifacts
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
+lib-cov/
+
+# Build outputs and caches
+build/Release/
+dist/
+.next/
+out/
+.nuxt/
+.output/
+.cache/
+.parcel-cache/
+.vite/
+.temp/
+.svelte-kit/
+.docusaurus/
+.vuepress/dist/
+**/.vitepress/dist/
+**/.vitepress/cache/
+.serverless/
+.fusebox/
+.dynamodb/
+.firebase/
+
+# Package-manager and tool artifacts
+bower_components/
+.npm/
+.grunt/
+.lock-wscript
+.yarn-integrity
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# TypeScript, linting, and REPL caches
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.node_repl_history
+.tern-port
+.vscode-test/
+
+# Editor and operating-system files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# Generated package archives
+*.tgz
+
+# Preserve example environment configuration
+!.env.example
