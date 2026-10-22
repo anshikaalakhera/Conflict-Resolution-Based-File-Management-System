@@ -12,7 +12,7 @@ USE conflictcore_db;
 -- ############################################################################
 
 -- 1. Get all files belonging to a user (e.g. user_id = 2, 'shubham_k')
-SELECT
+SELECT 
     f.file_id,
     f.file_name,
     f.file_size_bytes,
@@ -174,20 +174,20 @@ JOIN FILE_LOCKS fl ON fl.process_id = p.process_id
 WHERE u.user_id = 99;
 
 -- [U] UPDATE: Transition operation and lock states
-UPDATE OPERATIONS
-SET status = 'EXECUTING'
+UPDATE OPERATIONS 
+SET status = 'EXECUTING' 
 WHERE operation_id = 99;
 
-UPDATE PROCESSES
-SET state = 'RUNNING', started_at = CURRENT_TIMESTAMP
+UPDATE PROCESSES 
+SET state = 'RUNNING', started_at = CURRENT_TIMESTAMP 
 WHERE process_id = 99;
 
-UPDATE FILE_LOCKS
-SET lock_status = 'ACQUIRED', acquired_at = CURRENT_TIMESTAMP
+UPDATE FILE_LOCKS 
+SET lock_status = 'ACQUIRED', acquired_at = CURRENT_TIMESTAMP 
 WHERE lock_id = 99;
 
 -- Verify updated state
-SELECT
+SELECT 
     p.pid_alias,
     p.state AS updated_process_state,
     o.status AS updated_op_status,
