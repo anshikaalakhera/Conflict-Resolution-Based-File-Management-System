@@ -608,13 +608,18 @@ export const dispatchNextProcess = async () => {
             await connection.beginTransaction();
             transactionOpen = true;
 
+            const uploadFolderId = (details.folderId != null || details.folder_id != null)
+                ? Number(details.folderId || details.folder_id)
+                : null;
+
             const [fileInsert] = await connection.query(
                 `INSERT INTO FILES
-                    (file_name, owner_id, file_size_bytes,
+                    (file_name, folder_id, owner_id, file_size_bytes,
                      file_path, mime_type)
-                 VALUES (?, ?, ?, ?, ?)`,
+                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [
                     originalName,
+                    uploadFolderId,
                     Number(operation.user_id),
                     stagedFile.size,
                     stagedFilePath,

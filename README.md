@@ -12,18 +12,15 @@ The system is designed as an academic project for exploring file operations, pro
 
 ## Key Features
 
-- **File Management:** Backend services and routes for file-related operations.
-- **Folder Management:** Organize files through folder-related operations.
-- **Operation Handling:** Backend routes and services for coordinating file-system operations.
-- **Process Scheduling:** OS module supporting scheduling algorithms and process simulation.
-- **Resource Locking:** Lock management for coordinating access to shared resources.
-- **Deadlock Handling:** Deadlock-related logic and tests for studying resource conflicts.
-- **Relational Database:** MySQL-backed data management with schema, queries, repositories, and transaction utilities.
-- **Web Interface:** Frontend interface for interacting with the application.
-- **Testing:** OS module tests, database verification utilities, and integration-test documentation.
-- **Modular Architecture:** Separate components for the backend, OS module, database layer, frontend, and documentation.
-
-> **Note:** The exact availability and behavior of individual features depend on their current implementation and configuration. The project should be tested end-to-end before claiming every operation is fully integrated.
+- **Authentication & User Management:** User registration and login powered by secure `bcryptjs` password hashing, token-based session management, and quick 1-click demo logins for Admin, Developer, and Collaborator roles.
+- **Hierarchical Folder Explorer:** Visual folder cards grid, recursive breadcrumb navigation, cycle prevention on folder movements, and cascading child relocation upon deletion.
+- **Full File Lifecycle:** Multipart file upload, staged disk storage, atomic metadata registration, file downloading, renaming, and moving to Root (`folder_id: null`).
+- **File Versioning & Conflict Review:** Transactional revision history tracking every operation, real-time concurrent write contention detection, and interactive 3-way conflict resolution (`KEEP_CURRENT`, `ACCEPT_INCOMING`, `CREATE_BRANCH`).
+- **CPU Process Scheduling:** Deterministic simulation and live kernel dispatching using First-Come-First-Served (FCFS), Shortest Job First (SJF), and Priority algorithms with live Gantt timeline and turnaround/waiting metrics.
+- **Resource Locking & Concurrency Control:** Strict exclusive mutual exclusion locks, FIFO waiting queues, and atomic lock release hooks upon process completion or abortion.
+- **Deadlock Cycle Detection & Recovery:** Live Wait-For graph analysis identifying directed cycles, deterministic victim selection (priority, arrival, PID), and automated clean rollback.
+- **Transactional MySQL Persistence:** ACID-compliant MySQL 8.0 storage managing 7 relational tables (`USERS`, `FOLDERS`, `FILES`, `FILE_PERMISSIONS`, `OPERATIONS`, `PROCESSES`, `FILE_LOCKS`).
+- **Unified Web Interface:** Responsive single-page application featuring a dedicated Project Landing Page, Overview Dashboard, File Explorer, Process Monitor, Scheduler, Lock Manager, Deadlock Centre, and Activity Log.
 
 ## System Architecture
 
@@ -62,13 +59,14 @@ The diagram illustrates the intended logical architecture. The precise runtime c
 
 | Component | Technology |
 |---|---|
-| Frontend | HTML, CSS, JavaScript |
-| Backend | Node.js, Express.js |
-| Database | MySQL |
-| OS module | JavaScript-based scheduling and resource-management logic |
-| Database layer | SQL, schema definitions, queries, repositories, transactions |
-| Testing | Node.js test files and Python database-verification utility |
-| Development tools | Git, GitHub, Visual Studio Code |
+| Frontend | HTML5, CSS3, ES6+ JavaScript, Responsive SPA |
+| Backend API | Node.js (ESM), Hono web framework, `@hono/node-server` |
+| Concurrency & Auth | `bcryptjs` password hashing, token-based sessions |
+| Database | MySQL 8.0 with `mysql2/promise` connection pooling & transactions |
+| OS Module | In-memory CPU scheduler, exclusive lock manager, wait-for cycle detector |
+| Storage Layer | Multipart file streaming, staged disk persistence in `backend/storage/` |
+| Automated Testing | Node.js native test runner (`node --test`), 34 OS tests + 11 integration tests |
+| Development Tools | Git, PowerShell, Visual Studio Code |
 
 ## Project Structure
 
@@ -254,75 +252,63 @@ CREATE DATABASE conflictcore_db;
 
 Use the database name configured in `.env`. Do not assume that creating the database alone initializes the tables or migrations.
 
-### 5. Start the backend
+### 5. Start the unified application
 
-From the `backend` directory, inspect the available scripts:
-
-```bash
-npm run
-```
-
-Start the server using the script defined in `backend/package.json`. For example, if the package defines a `start` script:
+Run the application entry point from the project root:
 
 ```bash
-npm start
+node server.js
 ```
 
-For development, use the documented development script if one is provided.
+The unified Hono server starts immediately on port **3000**:
+- **REST APIs:** `http://localhost:3000/api/...`
+- **Interactive Web App:** `http://localhost:3000/`
+- Automatic storage directory initialization (`backend/storage/`)
+- Persistent queued process restoration from MySQL
 
-### 6. Open the frontend
+### 6. Access the application
 
-The frontend files are located in `frontend/`. Follow [`docs/FRONTEND.md`](docs/FRONTEND.md), if present, for the correct way to serve the interface and configure its API URL.
-
-If the frontend is served separately, make sure its API base URL points to the running backend and that CORS is configured appropriately.
+Open your browser to:
+```text
+http://localhost:3000
+```
+- The interface opens to the **ConflictCore Project Landing Page**.
+- Click **"Sign In"** or use the **1-Click Quick Demo Login** buttons:
+  - 👑 **Admin**: `admin_super` / `admin123`
+  - 💻 **Developer**: `shubham_k` / `password123`
+  - 🤝 **Collaborator**: `jahnvi_s` / `password123`
+- Or click **"Create New Account"** to register a new user with bcrypt-hashed credentials.
 
 ## Testing and Verification
 
-Run the tests supported by the relevant packages.
+ConflictCore includes a comprehensive test suite covering both OS scheduling/deadlock algorithms and live full-stack API flows.
 
-### OS module
-
-From `backend/os`:
-
+### 1. OS Kernel Unit Tests (34 tests)
+Validates CPU scheduling (FCFS, SJF, Priority), tie-breaking, lock acquisition/waiting queues, and Wait-For graph cycle detection with automated victim abortion:
 ```bash
-npm test
+node --test backend/os/tests/*.test.js
 ```
 
-Run this command if the OS module's `package.json` defines a test script.
-
-### Backend
-
-From `backend`:
-
+### 2. Full-Stack Integration Tests (11 tests)
+Validates health check, static frontend serving, bcrypt registration/login, folder CRUD with cycle prevention, file root move, algorithm switching, lock/deadlock states, version history, conflict detection, and `CREATE_BRANCH` conflict resolution:
 ```bash
-npm test
+node --test backend/tests/integration.test.js
 ```
-
-Run this command if a test script is defined in the backend package.
-
-### Database verification
-
-Review the usage instructions for `db/verify.py` before executing it. Ensure that it points to the intended development database.
-
-### Integration testing
-
-Consult [`tests/integration/README.md`](tests/integration/README.md) for the available integration checks.
 
 Before considering a feature complete, verify the frontend, API, database, and relevant OS behavior together. A passing unit test does not necessarily prove that the entire application works end-to-end.
 
 ## API Documentation
 
-The backend API is organized into route modules, including file, folder, operation, OS, and test-related routes.
+The backend API is organized into modular Hono route files mounted under `/api`:
 
-| Route module | Responsibility |
-|---|---|
-| `backend/routes/file.routes.js` | File-related API operations |
-| `backend/routes/folder.routes.js` | Folder-related API operations |
-| `backend/routes/operation.routes.js` | Operation-related API endpoints |
-| `backend/routes/os.routes.js` | OS module endpoints |
-| `backend/routes/test.routes.js` | Test or diagnostic endpoints |
-
-The exact endpoint paths, HTTP methods, request bodies, response formats, and authentication requirements should be documented from the current route implementations. Inspect the route files and `backend/server.js` before relying on any particular URL.
+| Route module | Base Path | Key Endpoints & Capabilities |
+|---|---|---|
+| `routes/auth.routes.js` | `/api/auth` | `POST /register`, `POST /login` (bcrypt hashing, session tokens), `POST /logout` |
+| `routes/file.routes.js` | `/api/files` | `GET /` (list), `POST /upload` (multipart stage), `GET /:id/download`, `PUT /:id` (rename/move to root), `DELETE /:id`, `GET /:id/versions` (revision history), `GET /:id/conflicts` (active lock contention), `POST /:id/resolve-conflict` (`KEEP_CURRENT`, `ACCEPT_INCOMING`, `CREATE_BRANCH`) |
+| `routes/folder.routes.js` | `/api/folders` | `GET /` (hierarchy), `POST /`, `PUT /:id` (rename/move with cycle prevention), `DELETE /:id` (safe child relocation) |
+| `routes/operation.routes.js` | `/api/operations` | `GET /` (audit log), `POST /` (queue operation), `POST /:id/execute` (submit to OS kernel) |
+| `routes/os.routes.js` | `/api` | `GET /processes` (states & metrics), `POST /processes/dispatch` (CPU tick), `PUT /scheduler/algorithm` (FCFS, SJF, PRIORITY), `GET /locks` (holders & FIFO queues), `GET /deadlocks` (Wait-For cycle detection & recovery victim) |
+| `routes/test.routes.js` | `/api/test` | Subsystem integration diagnostics |
 
 ## Development Workflow
 
