@@ -2,10 +2,74 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ConflictCore — File workspace</title>
+<title>ConflictCore — Multi-User File Management System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f7fb;--panel:#fff;--ink:#20283a;--muted:#7c8498;--line:#e9ebf2;--purple:#7164d9;--purple2:#f0eeff;--green:#23876a;--greenbg:#e5f6ef;--amber:#b7791f;--amberbg:#fff4dc;--red:#c45161;--redbg:#ffeaed;--blue:#4678c8;--bluebg:#eaf1ff;--shadow:0 8px 26px rgba(33,42,74,.045)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #bdb6ff;outline-offset:2px}.app{min-height:100vh;display:grid;grid-template-columns:248px 1fr}.sidebar{background:#fff;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:28px}.brand{display:flex;align-items:center;gap:11px;padding:0 9px}.brandmark{height:39px;width:39px;border-radius:13px;background:#7164d9;color:white;display:grid;place-items:center;box-shadow:0 7px 15px #7164d933}.brand strong{font:800 17px Manrope,sans-serif;letter-spacing:-.6px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.navlabel{font-size:10px;letter-spacing:1.5px;color:#a0a6b6;font-weight:700;padding:0 12px;margin-bottom:8px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:#70798d;display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;text-align:left;font-weight:600;width:100%;transition:.15s}.nav button:hover{background:#f8f7ff;color:var(--purple)}.nav button.active{background:var(--purple2);color:var(--purple)}.nav svg{width:18px;height:18px;flex-shrink:0}.nav .count{margin-left:auto;background:#ffe7ea;color:#c45161;border-radius:7px;font-size:11px;padding:3px 7px}.sidebar-bottom{margin-top:auto}.helpbox{background:#f8f7ff;border:1px solid #eeebff;border-radius:14px;padding:14px;margin:0 3px 17px}.helpbox strong{font-size:12px}.helpbox p{font-size:11px;line-height:1.6;color:var(--muted);margin:7px 0 12px}.helpbox button{border:0;background:white;border:1px solid var(--line);padding:8px 10px;border-radius:8px;color:#6256c7;font-size:11px;font-weight:700}.profile{border-top:1px solid var(--line);padding:17px 6px 0;display:flex;align-items:center;gap:10px}.avatar{height:35px;width:35px;border-radius:12px;background:#e6e1ff;color:#6256c7;font-weight:800;display:grid;place-items:center}.profile b{font-size:12px}.profile small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.main{min-width:0}.topbar{height:77px;background:#ffffffd9;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 35px;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}.crumb{color:var(--muted);font-size:12px}.crumb b{color:var(--ink)}.topright{display:flex;align-items:center;gap:12px}.search{position:relative}.search input{width:230px;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 35px;font-size:12px}.search svg{position:absolute;left:12px;top:10px;color:#9aa1b2}.iconbtn{height:36px;width:36px;border:1px solid var(--line);background:white;border-radius:10px;color:#727b8e;display:grid;place-items:center;position:relative}.iconbtn .dot{height:6px;width:6px;background:#e66c7c;border:1px solid white;border-radius:50%;position:absolute;right:7px;top:7px}.content{max-width:1500px;margin:auto;padding:30px 35px 45px}.pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}.eyebrow{font-size:10px;letter-spacing:1.7px;text-transform:uppercase;color:var(--purple);font-weight:800;margin-bottom:8px}.pagehead h1{font:800 26px Manrope,sans-serif;letter-spacing:-1px;margin:0 0 7px}.pagehead p{margin:0;color:var(--muted);font-size:13px}.actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 13px;display:inline-flex;align-items:center;gap:8px;color:#535d72;font-size:12px;font-weight:700;box-shadow:0 2px 4px #22222203}.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 5px 12px #7164d92c}.btn.soft{background:var(--purple2);border-color:var(--purple2);color:var(--purple)}.btn.danger{color:var(--red);background:var(--redbg);border-color:var(--redbg)}.btn svg{width:15px;height:15px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:19px}.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.stat{padding:18px 18px 16px;position:relative;overflow:hidden}.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:600}.stat-icon{height:35px;width:35px;border-radius:11px;display:grid;place-items:center}.stat-icon svg{height:18px;width:18px}.stat-value{font:800 27px Manrope,sans-serif;letter-spacing:-1px;margin:13px 0 6px}.stat-foot{font-size:11px;color:var(--muted)}.up{color:var(--green);font-weight:700}.layout2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,1fr);gap:17px;margin-bottom:17px}.card{padding:19px;min-width:0}.cardhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}.cardhead h2{font:800 14px Manrope,sans-serif;margin:0;letter-spacing:-.2px}.subtext{font-size:11px;color:var(--muted);margin-top:5px}.textbtn{border:0;background:none;color:var(--purple);font-weight:700;font-size:11px;padding:4px}.pill{font-size:10px;padding:5px 8px;border-radius:7px;font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}.pill.green{background:var(--greenbg);color:var(--green)}.pill.amber{background:var(--amberbg);color:var(--amber)}.pill.red{background:var(--redbg);color:var(--red)}.pill.blue{background:var(--bluebg);color:var(--blue)}.pill.gray{background:#f0f2f6;color:#747d91}.pill.purple{background:var(--purple2);color:var(--purple)}.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}th{text-align:left;color:#9aa1b0;font-size:10px;letter-spacing:.5px;font-weight:800;padding:11px 10px;border-bottom:1px solid var(--line)}td{padding:13px 10px;border-bottom:1px solid #f0f1f6;font-size:11px;color:#596276}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfbfe}.filecell{display:flex;align-items:center;gap:10px;color:#30394c;font-weight:700}.fileicon{width:32px;height:35px;border-radius:8px;background:#f1efff;color:#7869d9;display:grid;place-items:center;flex-shrink:0}.fileicon svg{width:17px;height:17px}.fileicon.green{background:#e5f6ef;color:#26866b}.fileicon.orange{background:#fff0df;color:#bf7d2c}.fileicon.blue{background:#eaf1ff;color:#527fc7}.filemeta{display:flex;flex-direction:column;gap:4px}.filemeta small{font-size:10px;color:#9aa1b0;font-weight:500}.mini{border:0;background:transparent;color:#8991a3;font-size:17px;padding:3px 6px;border-radius:7px}.mini:hover{background:#f0efff;color:var(--purple)}.activity{display:grid;gap:0}.event{display:grid;grid-template-columns:31px 1fr auto;gap:10px;padding:12px 0;border-bottom:1px solid #f0f1f6;align-items:start}.event:last-child{border:0}.eventicon{height:30px;width:30px;border-radius:10px;display:grid;place-items:center}.eventicon svg{height:15px;width:15px}.event strong{font-size:11px}.event p{font-size:10px;color:var(--muted);margin:4px 0 0;line-height:1.5}.event time{font-size:10px;color:#9ba2b1;white-space:nowrap}.barrow{display:grid;grid-template-columns:62px 1fr 35px;gap:10px;align-items:center;margin:17px 0}.barrow label{font-size:11px;color:#6f788c;font-weight:600}.bartrack{height:8px;background:#f0f1f6;border-radius:99px;overflow:hidden}.barfill{height:100%;border-radius:99px;background:var(--purple)}.barrow b{font-size:11px;text-align:right}.health{display:flex;align-items:center;gap:12px;padding:12px;background:#f7fbf9;border:1px solid #e4f3eb;border-radius:12px;margin-top:14px}.healthdot{height:9px;width:9px;border-radius:50%;background:#32a57c;box-shadow:0 0 0 4px #d8f4e7}.health strong{font-size:11px}.health p{margin:4px 0 0;color:var(--muted);font-size:10px}.view{display:none}.view.active{display:block}.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:15px}.filters{display:flex;gap:8px;flex-wrap:wrap}.select,.field{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 12px;color:#596276;font-size:12px}.empty{padding:40px;text-align:center;color:var(--muted)}.empty svg{width:35px;height:35px;color:#b6b0ef}.schedtop{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.algo{display:flex;background:#f4f5fa;border-radius:10px;padding:4px;gap:3px}.algo button{border:0;background:transparent;color:#7c8498;padding:8px 11px;border-radius:7px;font-size:11px;font-weight:700}.algo button.active{background:white;color:var(--purple);box-shadow:0 2px 7px #2222220c}.gantt{display:flex;gap:5px;overflow-x:auto;padding:18px 0 12px}.gblock{min-width:65px;flex:1;padding:12px 9px;border-radius:9px;background:#efedff;border:1px solid #e1ddff;color:#6256c7;text-align:center;font-size:11px;font-weight:800}.gblock:nth-child(2n){background:#e8f5f0;border-color:#d4eee3;color:#278366}.gblock:nth-child(3n){background:#fff1dd;border-color:#ffe5bd;color:#ae7523}.gblock small{display:block;font-weight:500;margin-top:7px;opacity:.8}.timeline{display:flex;justify-content:space-between;color:#9ba2b1;font-size:10px;padding-bottom:7px;border-bottom:1px solid var(--line)}.metricgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.metric{background:#f8f8fc;border:1px solid #f0f0f7;padding:13px;border-radius:10px}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font:800 19px Manrope;margin-top:6px}.graph{padding:12px;overflow:auto}.graph svg{width:100%;min-width:350px;height:230px}.lockrow{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid #f0f1f6;font-size:11px}.lockrow:last-child{border:0}.lockname{font-weight:700;display:flex;gap:9px;align-items:center}.lockname .fileicon{height:29px;width:29px}.lockname small{display:block;color:var(--muted);font-weight:500;margin-top:4px}.alertbox{border:1px solid #f8d8dd;background:#fff8f9;border-radius:12px;padding:15px;display:flex;gap:12px;margin-bottom:16px}.alertbox svg{color:var(--red);flex-shrink:0}.alertbox strong{font-size:12px}.alertbox p{font-size:11px;color:#8e6a70;line-height:1.6;margin:5px 0 0}.logrow{display:grid;grid-template-columns:85px 100px 1fr 95px;gap:12px;padding:13px 8px;border-bottom:1px solid #f0f1f6;font-size:11px;align-items:center}.logrow:last-child{border:0}.modalback{position:fixed;inset:0;background:#20283a66;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modalback.open{display:flex}.modal{background:white;width:min(440px,100%);border-radius:17px;padding:23px;box-shadow:0 25px 80px #1d244433}.modal h3{font:800 18px Manrope;margin:0 0 7px}.modal p{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 19px}.modal label{display:block;font-size:11px;font-weight:700;margin:13px 0 7px;color:#687186}.modal input,.modal select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px}.modalfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}.toast{position:fixed;bottom:24px;right:24px;background:#20283a;color:white;padding:13px 17px;border-radius:11px;box-shadow:0 8px 30px #2223;font-size:12px;z-index:30;opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.mobilemenu{display:none}
+:root{--bg:#f6f7fb;--panel:#fff;--ink:#20283a;--muted:#7c8498;--line:#e9ebf2;--purple:#7164d9;--purple2:#f0eeff;--green:#23876a;--greenbg:#e5f6ef;--amber:#b7791f;--amberbg:#fff4dc;--red:#c45161;--redbg:#ffeaed;--blue:#4678c8;--bluebg:#eaf1ff;--shadow:0 8px 26px rgba(33,42,74,.045)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #bdb6ff;outline-offset:2px}.app{min-height:100vh;display:grid;grid-template-columns:248px 1fr}.sidebar{background:#fff;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:28px}.brand{display:flex;align-items:center;gap:11px;padding:0 9px;cursor:pointer}.brandmark{height:39px;width:39px;border-radius:13px;background:#7164d9;color:white;display:grid;place-items:center;box-shadow:0 7px 15px #7164d933}.brand strong{font:800 17px Manrope,sans-serif;letter-spacing:-.6px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.navlabel{font-size:10px;letter-spacing:1.5px;color:#a0a6b6;font-weight:700;padding:0 12px;margin-bottom:8px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:#70798d;display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;text-align:left;font-weight:600;width:100%;transition:.15s}.nav button:hover{background:#f8f7ff;color:var(--purple)}.nav button.active{background:var(--purple2);color:var(--purple)}.nav svg{width:18px;height:18px;flex-shrink:0}.nav .count{margin-left:auto;background:#ffe7ea;color:#c45161;border-radius:7px;font-size:11px;padding:3px 7px}.sidebar-bottom{margin-top:auto}.helpbox{background:#f8f7ff;border:1px solid #eeebff;border-radius:14px;padding:14px;margin:0 3px 17px}.helpbox strong{font-size:12px}.helpbox p{font-size:11px;line-height:1.6;color:var(--muted);margin:7px 0 12px}.helpbox button{border:0;background:white;border:1px solid var(--line);padding:8px 10px;border-radius:8px;color:#6256c7;font-size:11px;font-weight:700}.profile{border-top:1px solid var(--line);padding:17px 6px 0;display:flex;align-items:center;justify-content:space-between;gap:10px}.avatar{height:35px;width:35px;border-radius:12px;background:#e6e1ff;color:#6256c7;font-weight:800;display:grid;place-items:center}.profile b{font-size:12px}.profile small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.main{min-width:0}.topbar{height:77px;background:#ffffffd9;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 35px;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}.crumb{color:var(--muted);font-size:12px}.crumb b{color:var(--ink)}.topright{display:flex;align-items:center;gap:12px}.search{position:relative}.search input{width:230px;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 35px;font-size:12px}.search svg{position:absolute;left:12px;top:10px;color:#9aa1b2}.iconbtn{height:36px;width:36px;border:1px solid var(--line);background:white;border-radius:10px;color:#727b8e;display:grid;place-items:center;position:relative}.iconbtn .dot{height:6px;width:6px;background:#e66c7c;border:1px solid white;border-radius:50%;position:absolute;right:7px;top:7px}.content{max-width:1500px;margin:auto;padding:30px 35px 45px}.pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}.eyebrow{font-size:10px;letter-spacing:1.7px;text-transform:uppercase;color:var(--purple);font-weight:800;margin-bottom:8px}.pagehead h1{font:800 26px Manrope,sans-serif;letter-spacing:-1px;margin:0 0 7px}.pagehead p{margin:0;color:var(--muted);font-size:13px}.actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 13px;display:inline-flex;align-items:center;gap:8px;color:#535d72;font-size:12px;font-weight:700;box-shadow:0 2px 4px #22222203}.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 5px 12px #7164d92c}.btn.soft{background:var(--purple2);border-color:var(--purple2);color:var(--purple)}.btn.danger{color:var(--red);background:var(--redbg);border-color:var(--redbg)}.btn svg{width:15px;height:15px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:19px}.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.stat{padding:18px 18px 16px;position:relative;overflow:hidden}.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:600}.stat-icon{height:35px;width:35px;border-radius:11px;display:grid;place-items:center}.stat-icon svg{height:18px;width:18px}.stat-value{font:800 27px Manrope,sans-serif;letter-spacing:-1px;margin:13px 0 6px}.stat-foot{font-size:11px;color:var(--muted)}.up{color:var(--green);font-weight:700}.layout2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,1fr);gap:17px;margin-bottom:17px}.card{padding:19px;min-width:0}.cardhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}.cardhead h2{font:800 14px Manrope,sans-serif;margin:0;letter-spacing:-.2px}.subtext{font-size:11px;color:var(--muted);margin-top:5px}.textbtn{border:0;background:none;color:var(--purple);font-weight:700;font-size:11px;padding:4px}.pill{font-size:10px;padding:5px 8px;border-radius:7px;font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}.pill.green{background:var(--greenbg);color:var(--green)}.pill.amber{background:var(--amberbg);color:var(--amber)}.pill.red{background:var(--redbg);color:var(--red)}.pill.blue{background:var(--bluebg);color:var(--blue)}.pill.gray{background:#f0f2f6;color:#747d91}.pill.purple{background:var(--purple2);color:var(--purple)}.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}th{text-align:left;color:#9aa1b0;font-size:10px;letter-spacing:.5px;font-weight:800;padding:11px 10px;border-bottom:1px solid var(--line)}td{padding:13px 10px;border-bottom:1px solid #f0f1f6;font-size:11px;color:#596276}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfbfe}.filecell{display:flex;align-items:center;gap:10px;color:#30394c;font-weight:700}.fileicon{width:32px;height:35px;border-radius:8px;background:#f1efff;color:#7869d9;display:grid;place-items:center;flex-shrink:0}.fileicon svg{width:17px;height:17px}.fileicon.green{background:#e5f6ef;color:#26866b}.fileicon.orange{background:#fff0df;color:#bf7d2c}.fileicon.blue{background:#eaf1ff;color:#527fc7}.filemeta{display:flex;flex-direction:column;gap:4px}.filemeta small{font-size:10px;color:#9aa1b0;font-weight:500}.mini{border:0;background:transparent;color:#8991a3;font-size:17px;padding:3px 6px;border-radius:7px}.mini:hover{background:#f0efff;color:var(--purple)}.activity{display:grid;gap:0}.event{display:grid;grid-template-columns:31px 1fr auto;gap:10px;padding:12px 0;border-bottom:1px solid #f0f1f6;align-items:start}.event:last-child{border:0}.eventicon{height:30px;width:30px;border-radius:10px;display:grid;place-items:center}.eventicon svg{height:15px;width:15px}.event strong{font-size:11px}.event p{font-size:10px;color:var(--muted);margin:4px 0 0;line-height:1.5}.event time{font-size:10px;color:#9ba2b1;white-space:nowrap}.barrow{display:grid;grid-template-columns:62px 1fr 35px;gap:10px;align-items:center;margin:17px 0}.barrow label{font-size:11px;color:#6f788c;font-weight:600}.bartrack{height:8px;background:#f0f1f6;border-radius:99px;overflow:hidden}.barfill{height:100%;border-radius:99px;background:var(--purple)}.barrow b{font-size:11px;text-align:right}.health{display:flex;align-items:center;gap:12px;padding:12px;background:#f7fbf9;border:1px solid #e4f3eb;border-radius:12px;margin-top:14px}.healthdot{height:9px;width:9px;border-radius:50%;background:#32a57c;box-shadow:0 0 0 4px #d8f4e7}.health strong{font-size:11px}.health p{margin:4px 0 0;color:var(--muted);font-size:10px}.view{display:none}.view.active{display:block}.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:15px}.filters{display:flex;gap:8px;flex-wrap:wrap}.select,.field{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 12px;color:#596276;font-size:12px}.empty{padding:40px;text-align:center;color:var(--muted)}.empty svg{width:35px;height:35px;color:#b6b0ef}.schedtop{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.algo{display:flex;background:#f4f5fa;border-radius:10px;padding:4px;gap:3px}.algo button{border:0;background:transparent;color:#7c8498;padding:8px 11px;border-radius:7px;font-size:11px;font-weight:700}.algo button.active{background:white;color:var(--purple);box-shadow:0 2px 7px #2222220c}.gantt{display:flex;gap:5px;overflow-x:auto;padding:18px 0 12px}.gblock{min-width:65px;flex:1;padding:12px 9px;border-radius:9px;background:#efedff;border:1px solid #e1ddff;color:#6256c7;text-align:center;font-size:11px;font-weight:800}.gblock:nth-child(2n){background:#e8f5f0;border-color:#d4eee3;color:#278366}.gblock:nth-child(3n){background:#fff1dd;border-color:#ffe5bd;color:#ae7523}.gblock small{display:block;font-weight:500;margin-top:7px;opacity:.8}.timeline{display:flex;justify-content:space-between;color:#9ba2b1;font-size:10px;padding-bottom:7px;border-bottom:1px solid var(--line)}.metricgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.metric{background:#f8f8fc;border:1px solid #f0f0f7;padding:13px;border-radius:10px}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font:800 19px Manrope;margin-top:6px}.graph{padding:12px;overflow:auto}.graph svg{width:100%;min-width:350px;height:230px}.lockrow{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid #f0f1f6;font-size:11px}.lockrow:last-child{border:0}.lockname{font-weight:700;display:flex;gap:9px;align-items:center}.lockname .fileicon{height:29px;width:29px}.lockname small{display:block;color:var(--muted);font-weight:500;margin-top:4px}.alertbox{border:1px solid #f8d8dd;background:#fff8f9;border-radius:12px;padding:15px;display:flex;gap:12px;margin-bottom:16px}.alertbox svg{color:var(--red);flex-shrink:0}.alertbox strong{font-size:12px}.alertbox p{font-size:11px;color:#8e6a70;line-height:1.6;margin:5px 0 0}.logrow{display:grid;grid-template-columns:85px 100px 1fr 95px;gap:12px;padding:13px 8px;border-bottom:1px solid #f0f1f6;font-size:11px;align-items:center}.logrow:last-child{border:0}.modalback{position:fixed;inset:0;background:#20283a66;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modalback.open{display:flex}.modal{background:white;width:min(460px,100%);border-radius:17px;padding:24px;box-shadow:0 25px 80px #1d244433}.modal h3{font:800 18px Manrope;margin:0 0 7px}.modal p{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 19px}.modal label{display:block;font-size:11px;font-weight:700;margin:13px 0 7px;color:#687186}.modal input,.modal select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px}.modalfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}.toast{position:fixed;bottom:24px;right:24px;background:#20283a;color:white;padding:13px 17px;border-radius:11px;box-shadow:0 8px 30px #2223;font-size:12px;z-index:30;opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.mobilemenu{display:none}
+/* Modern Folder Explorer Grid & Breadcrumbs */
+.breadcrumbs{display:flex;align-items:center;gap:7px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;font-weight:600}.crumb-btn{background:none;border:0;color:var(--purple);cursor:pointer;padding:3px 6px;border-radius:6px;font-weight:700}.crumb-btn:hover{background:var(--purple2)}.crumb-sep{color:var(--muted);font-size:10px}.foldergrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:20px}.foldercard{background:white;border:1px solid var(--line);border-radius:13px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}.foldercard:hover{border-color:var(--purple);transform:translateY(-1px)}.folderinfo{display:flex;align-items:center;gap:11px;min-width:0}.foldericon{width:36px;height:36px;border-radius:10px;background:#f3f1ff;color:var(--purple);display:grid;place-items:center;flex-shrink:0}.foldericon svg{width:18px;height:18px}.foldernames{display:flex;flex-direction:column;min-width:0}.foldernames strong{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.foldernames small{font-size:10px;color:var(--muted);margin-top:2px}
+/* Landing Page & Capabilities Styling */
+.landing-container{max-width:1120px;margin:10px auto 40px}
+.landing-hero{background:#ffffff;border:1px solid var(--line);border-radius:20px;padding:46px 36px 38px;text-align:center;box-shadow:var(--shadow);margin-bottom:32px;position:relative}
+.landing-badge{display:inline-flex;align-items:center;gap:7px;background:var(--purple2);color:var(--purple);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:99px;margin-bottom:18px}
+.landing-title{font:800 38px/1.2 'Manrope',sans-serif;letter-spacing:-1.2px;color:var(--ink);margin:0 0 10px}
+.landing-subtitle{font:700 16px/1.4 'Manrope',sans-serif;color:var(--purple);margin:0 0 16px;letter-spacing:-.3px}
+.landing-desc{font-size:14px;line-height:1.7;color:var(--muted);max-width:740px;margin:0 auto 28px}
+.landing-actions{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
+.landing-actions .btn{padding:12px 24px;font-size:13px;border-radius:10px}
+.demo-access-panel{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.demo-access-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.demo-pill-btn{border:1px solid #dcdff0;background:#f9faff;color:#4f5774;padding:7px 13px;border-radius:8px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:.15s;cursor:pointer}
+.demo-pill-btn:hover{background:#f0eeff;color:var(--purple);border-color:var(--purple);transform:translateY(-1px)}
+
+.capabilities-section{margin-top:20px}
+.section-header{text-align:center;margin-bottom:28px}
+.section-header .eyebrow{margin-bottom:8px}
+.section-header h2{font:800 24px/1.3 'Manrope',sans-serif;letter-spacing:-.6px;margin:0 0 8px;color:var(--ink)}
+.section-header p{font-size:13px;color:var(--muted);max-width:620px;margin:0 auto}
+
+.capabilities-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media(max-width:820px){.capabilities-grid{grid-template-columns:1fr}}
+.cap-card{background:#ffffff;border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s}
+.cap-card:hover{border-color:#cfcbfa;box-shadow:0 12px 30px rgba(113,100,217,.08)}
+.cap-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.cap-icon-title{display:flex;align-items:center;gap:12px}
+.cap-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.cap-icon svg{width:22px;height:22px}
+.cap-title{font:800 16px 'Manrope',sans-serif;margin:0;color:var(--ink);letter-spacing:-.3px}
+.cap-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+.cap-desc{font-size:12px;line-height:1.65;color:#555e72;margin:0 0 16px}
+.cap-features{list-style:none;padding:0;margin:0;display:grid;gap:8px;border-top:1px solid #f2f3f8;padding-top:14px;margin-top:auto}
+.cap-features li{font-size:11px;color:#5d667c;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.cap-features li svg{width:14px;height:14px;color:var(--green);flex-shrink:0;margin-top:1px}
+
+.roadmap-notice{background:#f9f9fc;border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-top:22px;display:flex;align-items:flex-start;gap:16px}
+.roadmap-badge{width:34px;height:34px;border-radius:10px;background:#eef1fb;color:var(--blue);display:grid;place-items:center;flex-shrink:0;font-size:15px;font-weight:800}
+.roadmap-content strong{font-size:12px;color:var(--ink);display:block;margin-bottom:4px}
+.roadmap-content p{margin:0;font-size:11px;line-height:1.6;color:var(--muted)}
+.modaltabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:18px;gap:8px}.modaltab{border:0;background:none;padding:9px 14px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}.modaltab.active{color:var(--purple);border-bottom-color:var(--purple)}
+/* Conflict & Version Modal Styles */
+.modal-lg{background:white;width:min(660px,100%);border-radius:18px;padding:26px;box-shadow:0 25px 80px #1d244433;max-height:90vh;overflow-y:auto}
+.comparison-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:600px){.comparison-grid{grid-template-columns:1fr}}
+.party-card{padding:14px;border-radius:12px;border:1px solid var(--line)}
+.party-card.holder{background:#f4f7fe;border-color:#d7e2fb}
+.party-card.waiter{background:#fffbf2;border-color:#fae5ba}
+.party-title{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.party-card.holder .party-title{color:var(--blue)}
+.party-card.waiter .party-title{color:var(--amber)}
+.strategy-list{display:flex;flex-direction:column;gap:9px;margin:16px 0}
+.strategy-option{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fcfcff;cursor:pointer;transition:.15s}
+.strategy-option:hover{border-color:var(--purple);background:#f7f6ff}
+.strategy-option input[type="radio"]{margin-top:2px;accent-color:var(--purple)}
+.strategy-option label{cursor:pointer;font-size:12px;color:var(--ink);display:block}
+.strategy-option small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.version-timeline{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.version-card{display:flex;align-items:flex-start;gap:14px;padding:14px;background:#f9faff;border:1px solid var(--line);border-radius:12px}
+.version-tag{background:var(--purple);color:white;font-weight:800;font-size:12px;padding:4px 8px;border-radius:7px;letter-spacing:.5px}
+.version-meta{flex:1;min-width:0}
+.version-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.version-detail{font-size:11px;color:var(--muted);background:white;padding:7px 10px;border-radius:7px;border:1px solid var(--line);margin-top:6px;font-family:monospace}
 @media(max-width:1100px){.app{grid-template-columns:210px 1fr}.content{padding:25px 22px}.topbar{padding:0 22px}.stats{grid-template-columns:repeat(2,1fr)}.layout2{grid-template-columns:1fr}.search input{width:180px}}
 @media(max-width:720px){.app{display:block}.sidebar{position:fixed;z-index:12;top:0;bottom:0;left:-260px;width:245px;transition:left .2s;box-shadow:var(--shadow)}.sidebar.open{left:0}.mobilemenu{display:grid}.topbar{height:65px;padding:0 15px}.topright{gap:7px}.search input{width:min(42vw,190px)}.content{padding:22px 14px}.pagehead{flex-direction:column}.pagehead h1{font-size:23px}.stats{gap:9px}.stat{padding:13px}.stat-value{font-size:24px}.stat-top{font-size:11px}.stat-icon{height:30px;width:30px}.card{padding:14px}.metricgrid{grid-template-columns:1fr 1fr}.metricgrid .metric:last-child{grid-column:span 2}.lockrow{grid-template-columns:1.2fr 1fr auto}.lockrow .holder{display:none}.logrow{grid-template-columns:65px 78px 1fr}.logrow .logstatus{display:none}.topright .topname{display:none}}
 </style>
@@ -13,41 +77,547 @@
 <body>
 <div class="app">
 <aside class="sidebar" id="sidebar">
- <div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="22"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21"/></svg></div><div><strong>ConflictCore</strong><small>File workspace</small></div></div>
+ <div class="brand" id="brandBtn"><div class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="22"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21"/></svg></div><div><strong>ConflictCore</strong><small>File workspace</small></div></div>
  <div><div class="navlabel">WORKSPACE</div><nav class="nav" id="nav">
  <button class="active" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="11" width="7" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/></svg>Overview</button>
  <button data-view="files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>File explorer</button>
  <button data-view="processes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h3v3H7zM14 9h3M14 12h3M7 16h10"/></svg>Process monitor</button>
  <button data-view="scheduler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h17M7 15h3V9H7zM13 15h3V5h-3zM19 15h1V11h-1z"/></svg>Scheduler</button>
- <button data-view="locks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg>Lock manager <span class="count">2</span></button>
- <button data-view="deadlocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="m8.5 7.5 2 7m5-7-2 7m-4.5 3h2"/></svg>Deadlock centre <span class="count">1</span></button>
+ <button data-view="locks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg>Lock manager <span class="count" id="navLockCount">0</span></button>
+ <button data-view="deadlocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="m8.5 7.5 2 7m5-7-2 7m-4.5 3h2"/></svg>Deadlock centre <span class="count" id="navDeadlockCount">0</span></button>
  <button data-view="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg>Activity log</button>
  </nav></div>
- <div class="sidebar-bottom"><div class="helpbox"><strong>Everything in sync</strong><p>This workspace is running with local demonstration data. Connect the team backend when integration is decided.</p><button id="aboutBtn">About this project ↗</button></div><div class="profile"><div class="avatar">JS</div><div><b>Jahnvi Sharma</b><small>Frontend & visualisation</small></div></div></div>
+ <div class="sidebar-bottom">
+   <div class="helpbox"><strong>MySQL & OS Kernel</strong><p>Live transaction consistency, OS scheduling queues & deadlock recovery active.</p><button id="aboutBtn">About ConflictCore ↗</button></div>
+   <div class="profile" id="userProfileCard">
+     <div style="display:flex;align-items:center;gap:10px;min-width:0">
+       <div class="avatar" id="userAvatar">CC</div>
+       <div style="min-width:0;overflow:hidden">
+         <b id="userNameDisplay" style="white-space:nowrap;text-overflow:ellipsis">Guest User</b>
+         <small id="userRoleDisplay">Unauthenticated</small>
+       </div>
+     </div>
+     <button class="mini" id="authActionBtn" title="Sign In or Sign Out" style="color:var(--purple);font-size:11px;font-weight:700">Login</button>
+   </div>
+ </div>
 </aside>
-<main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="iconbtn mobilemenu" id="menuBtn" aria-label="Open menu"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="crumb">Workspace <span style="padding:0 7px;color:#c5c8d2">/</span><b id="crumb">Overview</b></div></div><div class="topright"><div class="search"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="globalSearch" placeholder="Search files, processes..." aria-label="Search"></div><button class="iconbtn" id="notifBtn" title="Notifications"><svg viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i class="dot"></i></button><div class="avatar topname">JS</div></div></header>
+<main class="main">
+<header class="topbar">
+ <div style="display:flex;align-items:center;gap:12px">
+   <button class="iconbtn mobilemenu" id="menuBtn" aria-label="Open menu"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+   <div class="crumb" id="crumbWrap" style="display:none">Workspace <span style="padding:0 7px;color:#c5c8d2">/</span><b id="crumb">Overview</b></div>
+ </div>
+ <div class="topright">
+   <div class="search"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="globalSearch" placeholder="Search files, processes..." aria-label="Search"></div>
+   <button class="iconbtn" id="notifBtn" title="Activity log"><svg viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i class="dot"></i></button>
+   <div class="avatar topname" id="topAvatar">CC</div>
+ </div>
+</header>
 <div class="content">
-<section class="view active" id="view-dashboard"><div class="pagehead"><div><div class="eyebrow">SATURDAY, OCTOBER 10 · WORKSPACE</div><h1>Good morning, Jahnvi <span style="font-size:23px">✦</span></h1><p>Here's what's happening across your file workspace today.</p></div><div class="actions"><button class="btn" data-action="new-folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 10v6m-3-3h6"/></svg>New folder</button><button class="btn primary" data-action="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Upload files</button></div></div>
-<div class="stats"><div class="stat"><div class="stat-top">Total files <span class="stat-icon" style="background:#f0eeff;color:#7164d9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7"/></svg></span></div><div class="stat-value" id="statFiles">128</div><div class="stat-foot"><span class="up">↗ 12%</span> from last week</div></div><div class="stat"><div class="stat-top">Active processes <span class="stat-icon" style="background:#eaf1ff;color:#4678c8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h3v3H7zM14 9h3M14 12h3M7 16h10"/></svg></span></div><div class="stat-value" id="statProcesses">06</div><div class="stat-foot"><span class="up">4 running</span> · 2 waiting</div></div><div class="stat"><div class="stat-top">Active locks <span class="stat-icon" style="background:#e5f6ef;color:#23876a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg></span></div><div class="stat-value" id="statLocks">03</div><div class="stat-foot">Across 3 files</div></div><div class="stat"><div class="stat-top">Deadlock alerts <span class="stat-icon" style="background:#ffeaed;color:#c45161"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 10 18H2zM12 9v5m0 3h.01"/></svg></span></div><div class="stat-value" id="statDeadlocks">01</div><div class="stat-foot"><span style="color:var(--red);font-weight:700">Needs attention</span></div></div></div>
-<div class="layout2"><div class="card"><div class="cardhead"><div><h2>Recent file activity</h2><div class="subtext">Latest operations across your workspace</div></div><button class="textbtn" data-go="activity">View activity →</button></div><div class="tablewrap"><table><thead><tr><th>FILE NAME</th><th>OPERATION</th><th>UPDATED</th><th>STATUS</th><th></th></tr></thead><tbody id="recentFiles"></tbody></table></div></div><div class="card"><div class="cardhead"><div><h2>Process overview</h2><div class="subtext">Current process distribution</div></div><button class="textbtn" data-go="processes">Details →</button></div><div id="processBars"></div><div class="health"><span class="healthdot"></span><div><strong>Workspace operating normally</strong><p>Local demo environment · backend not connected</p></div></div></div></div>
-<div class="layout2"><div class="card"><div class="cardhead"><div><h2>Recent activity</h2><div class="subtext">A quick look at recent system events</div></div><button class="textbtn" data-go="activity">Full log →</button></div><div class="activity" id="recentActivity"></div></div><div class="card"><div class="cardhead"><div><h2>Quick access</h2><div class="subtext">Jump into a workspace tool</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn" data-go="scheduler" style="justify-content:flex-start;padding:14px 11px"><span class="stat-icon" style="background:#f0eeff;color:#7164d9;width:30px;height:30px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h17M7 15h3V9H7zM13 15h3V5h-3z"/></svg></span>Scheduler</button><button class="btn" data-go="locks" style="justify-content:flex-start;padding:14px 11px"><span class="stat-icon" style="background:#e5f6ef;color:#23876a;width:30px;height:30px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg></span>File locks</button><button class="btn" data-go="deadlocks" style="justify-content:flex-start;padding:14px 11px"><span class="stat-icon" style="background:#ffeaed;color:#c45161;width:30px;height:30px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="m8.5 7.5 2 7m5-7-2 7"/></svg></span>Deadlocks</button><button class="btn" data-go="files" style="justify-content:flex-start;padding:14px 11px"><span class="stat-icon" style="background:#eaf1ff;color:#4678c8;width:30px;height:30px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>File explorer</button></div><div style="margin-top:18px;padding:14px;background:#faf9ff;border:1px solid #eeebff;border-radius:11px"><div style="font-weight:700;font-size:11px">Designed for safe collaboration</div><p style="font-size:10px;color:var(--muted);line-height:1.6;margin:6px 0 0">Processes, locks and conflicts are visualised here to make concurrent file access easier to understand.</p></div></div></div>
+
+<!-- VIEW: LANDING PAGE -->
+<section class="view active" id="view-landing">
+  <div class="landing-container">
+    <!-- Hero Section -->
+    <div class="landing-hero">
+      <div class="landing-badge">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Engineering PBL Project · System Demonstration
+      </div>
+      <h1 class="landing-title">ConflictCore</h1>
+      <div class="landing-subtitle">Conflict Resolution-Based Multi-User File Management System</div>
+      <p class="landing-desc">
+        ConflictCore guarantees safe concurrent multi-user file operations through deterministic OS process scheduling (FCFS, SJF, Priority), granular file version tracking, concurrent write contention detection with interactive conflict resolution, and transactional MySQL relational database persistence.
+      </p>
+
+      <div class="landing-actions">
+        <button class="btn primary" id="landingSignInBtn">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+          Sign In
+        </button>
+        <button class="btn" id="landingRegisterBtn">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Create Account
+        </button>
+        <button class="btn soft" id="landingExploreBtn" data-go="dashboard">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="11" width="7" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/></svg>
+          Explore Workspace ↗
+        </button>
+      </div>
+
+      <div class="demo-access-panel">
+        <span class="demo-access-label">Quick 1-Click Demo Login:</span>
+        <button class="demo-pill-btn" data-demouser="admin_super">
+          <span>👑</span> <strong>Admin</strong> (admin_super)
+        </button>
+        <button class="demo-pill-btn" data-demouser="shubham_k">
+          <span>💻</span> <strong>Engineer</strong> (shubham_k)
+        </button>
+        <button class="demo-pill-btn" data-demouser="jahnvi_s">
+          <span>🤝</span> <strong>Collaborator</strong> (jahnvi_s)
+        </button>
+      </div>
+    </div>
+
+    <!-- Project Capabilities Section -->
+    <div class="capabilities-section">
+      <div class="section-header">
+        <div class="eyebrow">PROJECT CAPABILITIES & ARCHITECTURE</div>
+        <h2>Engineered for Concurrent Multi-User Operations</h2>
+        <p>A modular system coupling a Node.js REST API with an in-memory Operating Systems module and persistent MySQL relational storage.</p>
+      </div>
+
+      <div class="capabilities-grid">
+        <!-- Card 1: File Management -->
+        <div class="cap-card">
+          <div class="cap-card-head">
+            <div class="cap-icon-title">
+              <div class="cap-icon" style="background:#f0eeff;color:var(--purple)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              </div>
+              <div>
+                <h3 class="cap-title">File Management</h3>
+                <div class="cap-subtitle">Hierarchical Storage & Directory Explorer</div>
+              </div>
+            </div>
+            <span class="pill green">Implemented</span>
+          </div>
+          <p class="cap-desc">
+            Upload, download, create folders, rename, move, and delete files with safe local disk staging, MIME validation, and transactional synchronization.
+          </p>
+          <ul class="cap-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Multi-file upload staging to disk with file-size and type validation</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Nested directory navigation with interactive path breadcrumbs</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Atomic folder CRUD with cycle prevention and child re-parenting</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 2: OS Process Scheduling -->
+        <div class="cap-card">
+          <div class="cap-card-head">
+            <div class="cap-icon-title">
+              <div class="cap-icon" style="background:#eaf1ff;color:var(--blue)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 19V5M4 19h17M7 15h3V9H7zM13 15h3V5h-3zM19 15h1V11h-1z"/></svg>
+              </div>
+              <div>
+                <h3 class="cap-title">OS Process Scheduling</h3>
+                <div class="cap-subtitle">CPU Dispatching & Lifecycle Engine</div>
+              </div>
+            </div>
+            <span class="pill green">Implemented</span>
+          </div>
+          <p class="cap-desc">
+            Coordinates concurrent file operations using deterministic CPU scheduling algorithms with real-time Gantt timeline and performance metrics.
+          </p>
+          <ul class="cap-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>First-Come-First-Served (FCFS), Shortest Job First (SJF), and Priority policies</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Strict state transitions: READY → RUNNING → WAITING → COMPLETED</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Calculates arrival, burst, completion, waiting, and turnaround times</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 3: Version Tracking & Conflict Resolution -->
+        <div class="cap-card">
+          <div class="cap-card-head">
+            <div class="cap-icon-title">
+              <div class="cap-icon" style="background:#fff4dc;color:var(--amber)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <h3 class="cap-title">Version Tracking & Conflict Resolution</h3>
+                <div class="cap-subtitle">Concurrent Write Contention & Branching</div>
+              </div>
+            </div>
+            <span class="pill green">Implemented</span>
+          </div>
+          <p class="cap-desc">
+            Maintains historical revision logs for files and detects simultaneous write contention when competing operations attempt modifications.
+          </p>
+          <ul class="cap-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Detailed version history logging author, operation type, and timestamps</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Detects write contention between active lock holders and queued waiters</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Three resolution policies: Keep Current, Accept Incoming, or Branch as Copy</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 4: MySQL Database Integration -->
+        <div class="cap-card">
+          <div class="cap-card-head">
+            <div class="cap-icon-title">
+              <div class="cap-icon" style="background:#e5f6ef;color:var(--green)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 2C6.48 2 2 3.79 2 6v12c0 2.21 4.48 4 10 4s10-1.79 10-4V6c0-2.21-4.48-4-10-4z"/><path d="M2 12c0 2.21 4.48 4 10 4s10-1.79 10-4"/><path d="M2 6c0 2.21 4.48 4 10 4s10-1.79 10-4"/></svg>
+              </div>
+              <div>
+                <h3 class="cap-title">MySQL Database Integration</h3>
+                <div class="cap-subtitle">Relational Persistence & User Authentication</div>
+              </div>
+            </div>
+            <span class="pill green">Implemented</span>
+          </div>
+          <p class="cap-desc">
+            Persistent storage under MySQL 8.0 InnoDB engine with ACID transactions, foreign-key relational integrity, and secure password hashing.
+          </p>
+          <ul class="cap-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Normalized relational schema for users, folders, files, and audit records</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Bcrypt password hashing with 10 salt rounds for secure authentication</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Atomic transactions preventing orphaned data on deletions and moves</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Roadmap Scope Note -->
+      <div class="roadmap-notice">
+        <div class="roadmap-badge">ℹ</div>
+        <div class="roadmap-content">
+          <strong>Architecture Scope & Phase 2 Roadmap</strong>
+          <p>
+            The four subsystems above (File Management, OS Process Scheduling, Version Tracking with Conflict Resolution, and MySQL Database Integration) represent the verified, operational core of this project. Advanced multi-resource distributed lock managers and dynamic deadlock graph cycle prevention represent subsequent Phase 2 milestones and are currently maintained in their initial research and simulation baseline.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
-<section class="view" id="view-files"><div class="pagehead"><div><div class="eyebrow">YOUR WORKSPACE</div><h1>File explorer</h1><p>Browse, organise and manage your files in one place.</p></div><div class="actions"><button class="btn" data-action="new-folder">＋ New folder</button><button class="btn primary" data-action="upload">↑ Upload files</button></div></div><div class="toolbar"><div class="filters"><select class="select" id="folderFilter"><option value="all">All folders</option><option>Documents</option><option>Design</option><option>Research</option><option>Shared</option></select><select class="select" id="typeFilter"><option value="all">All file types</option><option value="PDF">PDF</option><option value="DOCX">DOCX</option><option value="XLSX">XLSX</option><option value="PNG">PNG</option></select></div><div style="color:var(--muted);font-size:11px" id="fileCount">128 items</div></div><div class="card"><div class="tablewrap"><table><thead><tr><th>NAME</th><th>LOCATION</th><th>SIZE</th><th>LAST MODIFIED</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody id="allFiles"></tbody></table></div></div><input type="file" id="fileInput" multiple hidden></section>
-<section class="view" id="view-processes"><div class="pagehead"><div><div class="eyebrow">OPERATING SYSTEMS</div><h1>Process monitor</h1><p>Track operation lifecycles and inspect process scheduling states.</p></div><div class="actions"><button class="btn" data-action="refresh">↻ Refresh</button><button class="btn" data-action="dispatch-next">⚡ Dispatch next</button><button class="btn primary" data-action="new-process">＋ Simulate process</button></div></div><div class="stats"><div class="stat"><div class="stat-top">Ready queue</div><div class="stat-value">02</div><div class="stat-foot">Waiting for CPU</div></div><div class="stat"><div class="stat-top">Running</div><div class="stat-value">02</div><div class="stat-foot"><span class="up">On simulated CPU</span></div></div><div class="stat"><div class="stat-top">Waiting on locks</div><div class="stat-value">02</div><div class="stat-foot">Resource contention</div></div><div class="stat"><div class="stat-top">Completed today</div><div class="stat-value" id="completedCount">24</div><div class="stat-foot">Demo lifecycle events</div></div></div><div class="card"><div class="cardhead"><div><h2>Process queue</h2><div class="subtext">Process state and scheduling information</div></div><select class="select" id="processFilter"><option value="all">All states</option><option>READY</option><option>RUNNING</option><option>WAITING</option><option>COMPLETED</option><option>ABORTED</option></select></div><div class="tablewrap"><table><thead><tr><th>PROCESS</th><th>OPERATION</th><th>FILE</th><th>BURST</th><th>PRIORITY</th><th>STATE</th><th>METRICS</th></tr></thead><tbody id="processTable"></tbody></table></div></div></section>
-<section class="view" id="view-scheduler"><div class="pagehead"><div><div class="eyebrow">OPERATING SYSTEMS · CPU SCHEDULING</div><h1>Scheduler visualisation</h1><p>Compare scheduling policies and understand their performance metrics.</p></div><div class="actions"><button class="btn" data-action="reset-schedule">↻ Reset</button></div></div><div class="card" style="margin-bottom:17px"><div class="schedtop"><div><h2 style="font:800 14px Manrope;margin:0">Scheduling algorithm</h2><div class="subtext">Select an algorithm to recalculate the execution order</div></div><div class="algo" id="algoButtons"><button class="active" data-algo="FCFS">FCFS</button><button data-algo="SJF">SJF</button><button data-algo="PRIORITY">Priority</button></div></div><div class="gantt" id="gantt"></div><div class="timeline" id="timeline"></div><div class="metricgrid" id="scheduleMetrics"></div><div class="subtext">Assumptions: non-preemptive scheduling, single simulated CPU, lower priority number means higher priority. Demonstration dataset; not connected to the OS kernel.</div></div><div class="card"><div class="cardhead"><div><h2>Process calculation table</h2><div class="subtext">Arrival, burst, completion and turnaround values for the selected policy</div></div></div><div class="tablewrap"><table><thead><tr><th>PROCESS</th><th>ARRIVAL</th><th>BURST</th><th>PRIORITY</th><th>COMPLETION</th><th>TURNAROUND</th><th>WAITING</th><th>RESPONSE</th></tr></thead><tbody id="scheduleTable"></tbody></table></div></div></section>
-<section class="view" id="view-locks"><div class="pagehead"><div><div class="eyebrow">CONCURRENCY CONTROL</div><h1>Lock manager</h1><p>Understand file ownership, lock contention and waiting queues.</p></div><div class="actions"><button class="btn" data-action="refresh">↻ Refresh</button></div></div><div class="layout2"><div class="card"><div class="cardhead"><div><h2>File lock registry</h2><div class="subtext">Current holders and waiting processes</div></div><span class="pill green">3 active</span></div><div id="lockList"></div></div><div class="card"><div class="cardhead"><div><h2>Locking rules</h2></div></div><div class="event"><div class="eventicon" style="background:#e5f6ef;color:#23876a">🔒</div><div><strong>Exclusive access</strong><p>Only one process can hold a file's exclusive lock at a time.</p></div></div><div class="event"><div class="eventicon" style="background:#eaf1ff;color:#4678c8">↕</div><div><strong>FIFO waiting queue</strong><p>Waiting processes are considered in the order they requested access.</p></div></div><div class="event"><div class="eventicon" style="background:#fff4dc;color:#b7791f">↻</div><div><strong>Release and resume</strong><p>When a lock is released, the next eligible waiter can resume.</p></div></div><div class="health"><span class="healthdot"></span><div><strong>Lock visualisation available</strong><p>Sample data only until the OS module is integrated.</p></div></div></div></div></section>
-<section class="view" id="view-deadlocks"><div class="pagehead"><div><div class="eyebrow">CONCURRENCY SAFETY</div><h1>Deadlock centre</h1><p>Inspect circular waits and review a simulated recovery decision.</p></div><div class="actions"><button class="btn primary" data-action="detect-deadlock">↻ Run detection demo</button></div></div><div class="alertbox"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 10 18H2zM12 9v5m0 3h.01"/></svg><div><strong id="deadlockHeadline">Circular wait detected in demonstration scenario</strong><p id="deadlockDescription">P1 holds File A and waits for File B, while P2 holds File B and waits for File A. This example illustrates a wait-for graph cycle; no real process or database transaction is being changed.</p></div></div><div class="layout2"><div class="card"><div class="cardhead"><div><h2>Wait-for graph</h2><div class="subtext">An edge A → B means process A is waiting for process B</div></div><span class="pill red" id="cyclePill">Cycle detected</span></div><div class="graph"><svg viewBox="0 0 440 235" role="img" aria-label="Wait-for graph showing P1 and P2 waiting on each other"><defs><marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d05a6b"/></marker></defs><path d="M145 75 C220 10 285 10 315 75" stroke="#d05a6b" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/><path d="M315 115 C285 185 220 185 145 115" stroke="#d05a6b" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/><rect x="48" y="68" width="100" height="55" rx="12" fill="#fff0f2" stroke="#f0c4cb"/><text x="98" y="91" text-anchor="middle" font-size="12" font-weight="700" fill="#b84455">P1</text><text x="98" y="107" text-anchor="middle" font-size="9" fill="#9d6870">holds A</text><rect x="292" y="68" width="100" height="55" rx="12" fill="#fff0f2" stroke="#f0c4cb"/><text x="342" y="91" text-anchor="middle" font-size="12" font-weight="700" fill="#b84455">P2</text><text x="342" y="107" text-anchor="middle" font-size="9" fill="#9d6870">holds B</text><text x="230" y="48" text-anchor="middle" font-size="10" fill="#b84455">waits for B</text><text x="220" y="171" text-anchor="middle" font-size="10" fill="#b84455">waits for A</text><text x="220" y="218" text-anchor="middle" font-size="10" fill="#969daf">Illustrative wait-for cycle · P1 ↔ P2</text></svg></div></div><div class="card"><div class="cardhead"><div><h2>Recovery summary</h2><div class="subtext">Example victim selection</div></div></div><div style="padding:13px;background:#fff7f8;border:1px solid #f8dfe3;border-radius:11px"><div class="eyebrow" style="color:var(--red);margin-bottom:5px">SELECTED VICTIM</div><div style="font:800 22px Manrope" id="victimName">P2</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Lowest importance / latest arrival, per demo rules</div></div><div style="margin-top:16px" id="recoverySteps"><div class="event"><div class="eventicon" style="background:#ffeaed;color:#c45161">1</div><div><strong>Cycle identified</strong><p>Wait-for graph contains a circular dependency.</p></div></div><div class="event"><div class="eventicon" style="background:#fff4dc;color:#b7791f">2</div><div><strong>Victim selected</strong><p>Choose the process with the lowest scheduling importance.</p></div></div><div class="event"><div class="eventicon" style="background:#e5f6ef;color:#23876a">3</div><div><strong>Release and resume</strong><p>Abort the victim, release its locks and wake eligible waiters.</p></div></div></div><button class="btn primary" style="width:100%;justify-content:center;margin-top:8px" data-action="recover-demo">Simulate recovery</button><div class="subtext" style="margin-top:9px">Demo only — this does not abort real processes or roll back a database transaction.</div></div></div><div class="card"><div class="cardhead"><div><h2>Recovery history</h2><div class="subtext">Illustrative events</div></div></div><div class="tablewrap"><table><thead><tr><th>TIME</th><th>CYCLE</th><th>VICTIM</th><th>RELEASED LOCKS</th><th>RESULT</th></tr></thead><tbody id="recoveryHistory"><tr><td>09:41:12</td><td>P1 ↔ P2</td><td>P2</td><td>File B</td><td><span class="pill green">Resolved (demo)</span></td></tr></tbody></table></div></div></section>
-<section class="view" id="view-activity"><div class="pagehead"><div><div class="eyebrow">AUDIT TRAIL</div><h1>Activity log</h1><p>Review the sequence and outcome of workspace events.</p></div><div class="actions"><button class="btn" data-action="export-log">↓ Export CSV</button></div></div><div class="toolbar"><div class="filters"><select class="select" id="logFilter"><option value="all">All event types</option><option>FILE</option><option>PROCESS</option><option>LOCK</option><option>DEADLOCK</option></select></div><span class="subtext">Local demonstration event log</span></div><div class="card"><div class="logrow" style="font-size:10px;color:#9aa1b0;font-weight:800"><span>TIME</span><span>EVENT</span><span>DESCRIPTION</span><span class="logstatus">STATUS</span></div><div id="fullLog"></div></div></section>
+
+<!-- VIEW: DASHBOARD OVERVIEW -->
+<section class="view" id="view-dashboard">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow" id="dashEyebrow">WORKSPACE OVERVIEW</div>
+      <h1 id="dashGreeting">Welcome to ConflictCore <span style="font-size:23px">✦</span></h1>
+      <p id="dashSub">Here is what is currently happening across your ConflictCore file workspace.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" data-action="new-folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 10v6m-3-3h6"/></svg>New folder</button>
+      <button class="btn primary" data-action="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Upload files</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-top">Total files <span class="stat-icon" style="background:#f0eeff;color:#7164d9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7"/></svg></span></div><div class="stat-value" id="statFiles">0</div><div class="stat-foot" id="statFilesSub">Live MySQL database</div></div>
+    <div class="stat"><div class="stat-top">Active processes <span class="stat-icon" style="background:#eaf1ff;color:#4678c8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h3v3H7zM14 9h3M14 12h3M7 16h10"/></svg></span></div><div class="stat-value" id="statProcesses">0</div><div class="stat-foot" id="statProcessesSub">0 ready · 0 running</div></div>
+    <div class="stat"><div class="stat-top">Active locks <span class="stat-icon" style="background:#e5f6ef;color:#23876a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg></span></div><div class="stat-value" id="statLocks">0</div><div class="stat-foot" id="statLocksSub">Kernel lock registry</div></div>
+    <div class="stat"><div class="stat-top">Deadlock status <span class="stat-icon" style="background:#ffeaed;color:#c45161"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 10 18H2zM12 9v5m0 3h.01"/></svg></span></div><div class="stat-value" id="statDeadlocks">0</div><div class="stat-foot" id="statDeadlocksSub">Wait-for graph acyclic</div></div>
+  </div>
+  <div class="layout2">
+    <div class="card">
+      <div class="cardhead"><div><h2>Recent file activity</h2><div class="subtext">Latest database-committed files</div></div><button class="textbtn" data-go="files">Open file explorer →</button></div>
+      <div class="tablewrap"><table><thead><tr><th>FILE NAME</th><th>LOCATION</th><th>SIZE</th><th>LAST MODIFIED</th><th>STATUS</th><th></th></tr></thead><tbody id="recentFiles"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><div><h2>Process overview</h2><div class="subtext">OS kernel queue distribution</div></div><button class="textbtn" data-go="processes">Details →</button></div>
+      <div id="processBars"></div>
+      <div class="health"><span class="healthdot"></span><div><strong>Connecting to backend...</strong><p>Checking http://localhost:3000/api</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW: FILE EXPLORER WITH FOLDER GRID & BREADCRUMBS -->
+<section class="view" id="view-files">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">PERSISTENT STORAGE</div>
+      <h1>File explorer</h1>
+      <p>Browse directories, manage nested folder structures, and inspect file metadata.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" data-action="new-folder">＋ New folder</button>
+      <button class="btn primary" data-action="upload">↑ Upload to current folder</button>
+    </div>
+  </div>
+
+  <!-- Breadcrumbs & Directory Navigation -->
+  <div class="breadcrumbs" id="folderBreadcrumbs">
+    <button class="crumb-btn" data-navfolder="root">📁 Root</button>
+  </div>
+
+  <!-- Folder Grid View -->
+  <div class="foldergrid" id="folderGridContainer"></div>
+
+  <!-- Files Table Toolbar -->
+  <div class="toolbar">
+    <div class="filters">
+      <select class="select" id="folderFilter"><option value="all">All folders (recursive)</option></select>
+      <select class="select" id="typeFilter"><option value="all">All file types</option><option value="PDF">PDF</option><option value="DOCX">DOCX</option><option value="XLSX">XLSX</option><option value="PNG">PNG</option></select>
+    </div>
+    <div style="color:var(--muted);font-size:11px" id="fileCount">0 items</div>
+  </div>
+
+  <div class="card">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>NAME</th><th>LOCATION</th><th>SIZE</th><th>LAST MODIFIED</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+        <tbody id="allFiles"></tbody>
+      </table>
+    </div>
+  </div>
+  <input type="file" id="fileInput" multiple hidden>
+</section>
+
+<!-- VIEW: PROCESS MONITOR -->
+<section class="view" id="view-processes">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">OPERATING SYSTEMS · CPU DISPATCH</div>
+      <h1>Process monitor</h1>
+      <p>Track operation lifecycles, inspect CPU scheduling states, and trigger execution dispatches.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" data-action="refresh">↻ Refresh</button>
+      <button class="btn primary" data-action="dispatch-next">⚡ Dispatch next process</button>
+      <button class="btn" data-action="new-process">＋ Simulate / Queue process</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-top">Ready queue</div><div class="stat-value" id="monReadyCount">0</div><div class="stat-foot">Awaiting CPU dispatch</div></div>
+    <div class="stat"><div class="stat-top">Running</div><div class="stat-value" id="monRunningCount">0</div><div class="stat-foot">Currently on CPU</div></div>
+    <div class="stat"><div class="stat-top">Waiting on locks</div><div class="stat-value" id="monWaitingCount">0</div><div class="stat-foot">Resource contention</div></div>
+    <div class="stat"><div class="stat-top">Completed</div><div class="stat-value" id="monCompletedCount">0</div><div class="stat-foot">Terminated successfully</div></div>
+  </div>
+  <div class="card">
+    <div class="cardhead">
+      <div><h2>Process queue table</h2><div class="subtext">Live OS kernel process states, arrival timestamps, and execution bursts</div></div>
+      <select class="select" id="processFilter"><option value="all">All states</option><option value="READY">READY</option><option value="RUNNING">RUNNING</option><option value="WAITING">WAITING</option><option value="COMPLETED">COMPLETED</option><option value="ABORTED">ABORTED</option></select>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>PROCESS ID</th><th>OPERATION</th><th>FILE / TARGET</th><th>BURST TIME</th><th>PRIORITY</th><th>STATE</th><th>SCHEDULING METRICS</th></tr></thead>
+        <tbody id="processTable"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW: SCHEDULER VISUALIZATION -->
+<section class="view" id="view-scheduler">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">OPERATING SYSTEMS · CPU POLICIES</div>
+      <h1>Scheduler visualisation</h1>
+      <p>Compare deterministic scheduling policies against live and simulated system workloads.</p>
+    </div>
+    <div class="actions"><button class="btn" data-action="reset-schedule">↻ Reset to FCFS</button></div>
+  </div>
+  <div class="card" style="margin-bottom:17px">
+    <div class="schedtop">
+      <div><h2 style="font:800 14px Manrope;margin:0">Active CPU scheduling policy</h2><div class="subtext">Select an algorithm to dynamically reorder ready queues in the OS kernel</div></div>
+      <div class="algo" id="algoButtons">
+        <button class="active" data-algo="FCFS">FCFS</button>
+        <button data-algo="SJF">SJF (Non-preemptive)</button>
+        <button data-algo="PRIORITY">Priority</button>
+      </div>
+    </div>
+    <div class="gantt" id="gantt"></div>
+    <div class="timeline" id="timeline"></div>
+    <div class="metricgrid" id="scheduleMetrics"></div>
+    <div class="subtext">Deterministic tie-breaking: earlier arrival time, then lowest process ID. Metrics synchronized with the live OS kernel.</div>
+  </div>
+  <div class="card">
+    <div class="cardhead"><div><h2>Process calculation table</h2><div class="subtext">Arrival, burst, priority, completion, turnaround, and waiting values</div></div></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>PROCESS</th><th>ARRIVAL</th><th>BURST</th><th>PRIORITY</th><th>COMPLETION</th><th>TURNAROUND</th><th>WAITING</th><th>RESPONSE</th></tr></thead>
+        <tbody id="scheduleTable"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW: FILE LOCKS -->
+<section class="view" id="view-locks">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">CONCURRENCY CONTROL</div>
+      <h1>Lock manager</h1>
+      <p>Inspect active file holders, FIFO waiting queues, and resource contention.</p>
+    </div>
+    <div class="actions"><button class="btn" data-action="refresh">↻ Refresh locks</button></div>
+  </div>
+  <div class="layout2">
+    <div class="card">
+      <div class="cardhead"><div><h2>Active lock registry</h2><div class="subtext">Current holders and waiting queues</div></div><span class="pill green" id="activeLockBadge">0 active</span></div>
+      <div id="lockList"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><div><h2>Locking rules & invariants</h2></div></div>
+      <div class="event"><div class="eventicon" style="background:#e5f6ef;color:#23876a">🔒</div><div><strong>Exclusive mutual exclusion</strong><p>Only one process holds an exclusive lock per file at any moment.</p></div></div>
+      <div class="event"><div class="eventicon" style="background:#eaf1ff;color:#4678c8">↕</div><div><strong>Strict FIFO waiting</strong><p>Waiting processes are queued and granted access in exact request order.</p></div></div>
+      <div class="event"><div class="eventicon" style="background:#fff4dc;color:#b7791f">↻</div><div><strong>Automatic release on completion/abort</strong><p>When a process finishes or is aborted, its locks are released immediately.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW: DEADLOCK CENTRE -->
+<section class="view" id="view-deadlocks">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">CONCURRENCY SAFETY</div>
+      <h1>Deadlock centre</h1>
+      <p>Inspect circular waits, evaluate wait-for graph edges, and review automated victim recovery.</p>
+    </div>
+    <div class="actions"><button class="btn primary" data-action="detect-deadlock">↻ Run cycle detection</button></div>
+  </div>
+  <div class="alertbox">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 10 18H2zM12 9v5m0 3h.01"/></svg>
+    <div>
+      <strong id="deadlockHeadline">Resource allocation graph is acyclic</strong>
+      <p id="deadlockDescription">The OS Wait-For graph is continually scanned for circular dependencies during lock acquisitions.</p>
+    </div>
+  </div>
+  <div class="layout2">
+    <div class="card">
+      <div class="cardhead"><div><h2>Wait-for dependency graph</h2><div class="subtext">An edge P1 → P2 means process P1 is waiting for lock held by P2</div></div><span class="pill green" id="cyclePill">Acyclic (Safe)</span></div>
+      <div class="graph" id="graphContainer">
+        <svg viewBox="0 0 440 235" role="img" aria-label="Wait-for graph visualization">
+          <defs><marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d05a6b"/></marker></defs>
+          <path d="M145 75 C220 10 285 10 315 75" stroke="#d05a6b" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+          <path d="M315 115 C285 185 220 185 145 115" stroke="#d05a6b" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+          <rect x="48" y="68" width="100" height="55" rx="12" fill="#fff0f2" stroke="#f0c4cb"/><text x="98" y="91" text-anchor="middle" font-size="12" font-weight="700" fill="#b84455">P1</text><text x="98" y="107" text-anchor="middle" font-size="9" fill="#9d6870">holds File A</text>
+          <rect x="292" y="68" width="100" height="55" rx="12" fill="#fff0f2" stroke="#f0c4cb"/><text x="342" y="91" text-anchor="middle" font-size="12" font-weight="700" fill="#b84455">P2</text><text x="342" y="107" text-anchor="middle" font-size="9" fill="#9d6870">holds File B</text>
+          <text x="230" y="48" text-anchor="middle" font-size="10" fill="#b84455">waits for File B</text><text x="220" y="171" text-anchor="middle" font-size="10" fill="#b84455">waits for File A</text>
+          <text x="220" y="218" text-anchor="middle" font-size="10" fill="#969daf" id="graphCaption">Live OS Wait-For Graph Monitor</text>
+        </svg>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><div><h2>Victim selection policy</h2><div class="subtext">Deterministic rollback criteria</div></div></div>
+      <div style="padding:13px;background:#fff7f8;border:1px solid #f8dfe3;border-radius:11px">
+        <div class="eyebrow" style="color:var(--red);margin-bottom:5px">EVALUATED VICTIM</div>
+        <div style="font:800 22px Manrope" id="victimName">None</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Lowest scheduling priority, latest arrival, or highest process ID.</div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="event"><div class="eventicon" style="background:#ffeaed;color:#c45161">1</div><div><strong>Cycle identified</strong><p>Wait-for graph contains a circular directed path.</p></div></div>
+        <div class="event"><div class="eventicon" style="background:#fff4dc;color:#b7791f">2</div><div><strong>Victim selected</strong><p>Minimizes work lost based on process priority and arrival.</p></div></div>
+        <div class="event"><div class="eventicon" style="background:#e5f6ef;color:#23876a">3</div><div><strong>Rollback & recovery</strong><p>Aborts victim, releases locks, and wakes eligible waiting processes.</p></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardhead"><div><h2>Recovery history</h2><div class="subtext">Audited deadlock resolution events</div></div></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>TIME</th><th>CYCLE</th><th>VICTIM</th><th>RELEASED LOCKS</th><th>RESULT</th></tr></thead>
+        <tbody id="recoveryHistory"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW: ACTIVITY LOG -->
+<section class="view" id="view-activity">
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">AUDIT TRAIL</div>
+      <h1>Activity log</h1>
+      <p>Review the full sequence and execution outcomes of workspace operations.</p>
+    </div>
+    <div class="actions"><button class="btn" data-action="export-log">↓ Export CSV</button></div>
+  </div>
+  <div class="toolbar">
+    <div class="filters">
+      <select class="select" id="logFilter"><option value="all">All event types</option><option value="FILE">FILE</option><option value="UPLOAD">UPLOAD</option><option value="DOWNLOAD">DOWNLOAD</option><option value="MOVE">MOVE</option><option value="PROCESS">PROCESS</option><option value="LOCK">LOCK</option><option value="DEADLOCK">DEADLOCK</option></select>
+    </div>
+    <span class="subtext">Transactional MySQL database audit log</span>
+  </div>
+  <div class="card">
+    <div class="logrow" style="font-size:10px;color:#9aa1b0;font-weight:800"><span>TIME</span><span>EVENT</span><span>DESCRIPTION</span><span class="logstatus">STATUS</span></div>
+    <div id="fullLog"></div>
+  </div>
+</section>
+
 </div></main></div>
-<div class="modalback" id="modalBack"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">Create folder</h3><p id="modalDesc">Add a new folder to this local demonstration workspace.</p><div id="modalFields"></div><div class="modalfoot"><button class="btn" id="cancelModal">Cancel</button><button class="btn primary" id="confirmModal">Create folder</button></div></div></div><div class="toast" id="toast" role="status"></div>
+
+<!-- MODAL: SHARED (FOLDER / PROCESS / UPLOAD / AUTH) -->
+<div class="modalback" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Create folder</h3>
+    <p id="modalDesc">Add a new folder to this workspace database.</p>
+    <div id="modalFields"></div>
+    <div class="modalfoot">
+      <button class="btn" id="cancelModal">Cancel</button>
+      <button class="btn primary" id="confirmModal">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFLICT REVIEW & RESOLUTION -->
+<div class="modalback" id="conflictModalBack">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="conflictModalTitle">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 id="conflictModalTitle" style="margin:0">Concurrent Conflict Review</h3>
+      <button class="mini" onclick="closeConflictModal()" title="Close">✕</button>
+    </div>
+    <div id="conflictModalBody"></div>
+    <div class="modalfoot" id="conflictModalFoot">
+      <button class="btn" onclick="closeConflictModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: FILE VERSION HISTORY -->
+<div class="modalback" id="versionsModalBack">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="versionsModalTitle">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 id="versionsModalTitle" style="margin:0">File Version History</h3>
+      <button class="mini" onclick="closeVersionsModal()" title="Close">✕</button>
+    </div>
+    <div id="versionsModalBody"></div>
+    <div class="modalfoot">
+      <button class="btn primary" onclick="closeVersionsModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
 <script>
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const API_BASE = window.CONFLICTCORE_API_BASE || 'http://localhost:3000/api';
-const icons = { pdf: 'file-text', docx: 'file-text', xlsx: 'file-spreadsheet', png: 'image', folder: 'folder' };
+const API_BASE = window.CONFLICTCORE_API_BASE || (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '3000') ? 'http://localhost:3000/api' : '/api');
 
+// Current session
+let currentUser = JSON.parse(localStorage.getItem('conflictcore_user') || 'null');
+let authToken = localStorage.getItem('conflictcore_token') || null;
+
+// Application State
 let files = [];
-let folders = new Set(['Documents', 'Design', 'Research', 'Shared']);
-let folderMap = new Map();
+let allFolders = [];
+let currentFolderId = null; // null represents Root
 let processes = [];
 let locks = [];
 let deadlocks = { activeCycle: null, waitForEdges: [], history: [] };
@@ -65,7 +635,7 @@ function toast(s) {
   t.textContent = s;
   t.classList.add('show');
   clearTimeout(window.toastTimer);
-  window.toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  window.toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 function pill(s) {
@@ -115,6 +685,9 @@ async function apiRequest(endpoint, options = {}) {
   if (!isFormData && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
+  if (authToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
   const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -131,13 +704,10 @@ async function apiRequest(endpoint, options = {}) {
 async function loadFolders() {
   try {
     const data = await apiRequest('/folders');
-    const folderList = Array.isArray(data.folders) ? data.folders : [];
-    folderMap.clear();
-    folderList.forEach(f => {
-      folderMap.set(f.folder_id, f.folder_name);
-      folders.add(f.folder_name);
-    });
-    updateFolderFilterUI();
+    allFolders = Array.isArray(data.folders) ? data.folders : [];
+    updateFolderDropdown();
+    renderFolderGrid();
+    renderBreadcrumbs();
     return true;
   } catch (err) {
     console.warn('Could not load folders:', err.message);
@@ -145,13 +715,15 @@ async function loadFolders() {
   }
 }
 
-function updateFolderFilterUI() {
+function updateFolderDropdown() {
   const select = $('#folderFilter');
   if (!select) return;
   const currentVal = select.value;
-  select.innerHTML = '<option value="all">All folders</option>' +
-    [...folders].map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
-  if (folders.has(currentVal)) select.value = currentVal;
+  select.innerHTML = '<option value="all">All folders (recursive)</option><option value="root">Root Workspace only</option>' +
+    allFolders.map(f => `<option value="${f.folder_id}">${esc(f.folder_name)}</option>`).join('');
+  if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+    select.value = currentVal;
+  }
 }
 
 async function loadFiles() {
@@ -160,17 +732,20 @@ async function loadFiles() {
     const rawFiles = Array.isArray(data.files) ? data.files : [];
     files = rawFiles.map(f => {
       const ext = (f.file_name?.split('.').pop() || 'FILE').toUpperCase();
+      const parentFolder = allFolders.find(x => x.folder_id === f.folder_id);
       return {
         id: f.file_id,
         name: f.file_name,
         type: ext,
-        folder: folderMap.get(f.folder_id) || (f.folder_id ? `Folder #${f.folder_id}` : 'Documents'),
+        folder: parentFolder ? parentFolder.folder_name : 'Root',
         folderId: f.folder_id,
         size: formatSize(f.file_size_bytes),
         sizeBytes: f.file_size_bytes,
         updated: formatDate(f.updated_at || f.created_at),
         status: f.status || 'ACTIVE',
-        op: 'UPLOAD',
+        ownerId: f.owner_id,
+        ownerName: f.owner_name || 'User',
+        permission: f.permission || 'OWNER',
         raw: f
       };
     });
@@ -293,20 +868,8 @@ async function loadAll() {
   ]);
 
   const [foldersOk, filesOk, processesOk, locksOk, deadlocksOk, opsOk] = results;
-  const allOk = foldersOk && filesOk && processesOk && locksOk && deadlocksOk && opsOk;
-  const anyOk = foldersOk || filesOk || processesOk || locksOk || deadlocksOk || opsOk;
-
-  if (allOk) {
-    isBackendConnected = true;
-    updateHealthIndicator('connected');
-  } else if (anyOk) {
-    isBackendConnected = false;
-    updateHealthIndicator('degraded');
-  } else {
-    isBackendConnected = false;
-    updateHealthIndicator('disconnected');
-  }
-
+  isBackendConnected = foldersOk && filesOk && processesOk;
+  updateHealthIndicator(isBackendConnected ? 'connected' : (foldersOk || filesOk ? 'degraded' : 'disconnected'));
   renderAll();
 }
 
@@ -315,17 +878,17 @@ function updateHealthIndicator(state) {
     const p = h.querySelector('p');
     const dot = h.querySelector('.healthdot');
     const strong = h.querySelector('strong');
-    if (state === 'connected' || state === true) {
-      if (strong) strong.textContent = 'Backend connected & synchronized';
-      if (p) p.textContent = `Connected to API at ${API_BASE} · Live MySQL & OS Kernel active`;
+    if (state === 'connected') {
+      if (strong) strong.textContent = 'Backend synchronized';
+      if (p) p.textContent = `Connected to API at ${API_BASE} · MySQL 8.0 & OS Kernel operational`;
       if (dot) dot.style.background = '#32a57c';
     } else if (state === 'degraded') {
-      if (strong) strong.textContent = 'Backend partially connected';
-      if (p) p.textContent = `Connected to ${API_BASE}, but some subsystem endpoints are degraded.`;
+      if (strong) strong.textContent = 'Partial subsystem response';
+      if (p) p.textContent = `Connected to ${API_BASE}, but some OS endpoints reported warnings.`;
       if (dot) dot.style.background = '#e8b35a';
     } else {
-      if (strong) strong.textContent = 'Offline / Connecting...';
-      if (p) p.textContent = `Cannot reach ${API_BASE}. Ensure backend is running (port 3000).`;
+      if (strong) strong.textContent = 'Offline / Connecting';
+      if (p) p.textContent = `Cannot reach ${API_BASE}. Ensure server is running on port 3000.`;
       if (dot) dot.style.background = '#c45161';
     }
   });
@@ -333,26 +896,192 @@ function updateHealthIndicator(state) {
 
 // ---- Renderers ----
 
+function updateSessionUI() {
+  const userGreeting = $('#dashGreeting');
+  const userSub = $('#dashSub');
+  const eyebrow = $('#dashEyebrow');
+  const userNameEl = $('#userNameDisplay');
+  const userRoleEl = $('#userRoleDisplay');
+  const userAvatar = $('#userAvatar');
+  const topAvatar = $('#topAvatar');
+  const authBtn = $('#authActionBtn');
+
+  const rawName = currentUser && (currentUser.username || currentUser.name);
+  const displayName = rawName ? String(rawName).trim() : '';
+
+  if (currentUser && displayName) {
+    const cleanLetters = displayName.replace(/[^a-zA-Z0-9]/g, '');
+    const initials = (cleanLetters.slice(0, 2) || 'CC').toUpperCase();
+    if (userGreeting) userGreeting.innerHTML = `Welcome, ${esc(displayName)} <span style="font-size:23px">✦</span>`;
+    if (userSub) userSub.textContent = `Signed in as ${currentUser.role || 'Member'} (${currentUser.email || 'local'}).`;
+    if (eyebrow) eyebrow.textContent = `ACTIVE SESSION · ${(currentUser.role || 'MEMBER').toUpperCase()}`;
+    if (userNameEl) userNameEl.textContent = displayName;
+    if (userRoleEl) userRoleEl.textContent = `${currentUser.role || 'Member'} · Active`;
+    if (userAvatar) userAvatar.textContent = initials;
+    if (topAvatar) topAvatar.textContent = initials;
+    if (authBtn) {
+      authBtn.textContent = 'Sign Out';
+      authBtn.title = 'Sign Out of ConflictCore';
+    }
+  } else {
+    if (userGreeting) userGreeting.innerHTML = `Welcome to ConflictCore <span style="font-size:23px">✦</span>`;
+    if (userSub) userSub.textContent = `Sign in to access your files, submit operations, and track OS queues.`;
+    if (eyebrow) eyebrow.textContent = `PUBLIC WORKSPACE PREVIEW`;
+    if (userNameEl) userNameEl.textContent = 'Guest User';
+    if (userRoleEl) userRoleEl.textContent = 'Unauthenticated';
+    if (userAvatar) userAvatar.textContent = 'CC';
+    if (topAvatar) topAvatar.textContent = 'CC';
+    if (authBtn) {
+      authBtn.textContent = 'Sign In';
+      authBtn.title = 'Sign In to Workspace';
+    }
+  }
+}
+
+function renderBreadcrumbs() {
+  const container = $('#folderBreadcrumbs');
+  if (!container) return;
+
+  let crumbs = [];
+  let curr = currentFolderId;
+
+  while (curr != null) {
+    const f = allFolders.find(x => x.folder_id === curr);
+    if (!f) break;
+    crumbs.unshift(f);
+    curr = f.parent_folder_id;
+  }
+
+  let html = `<button class="crumb-btn" data-navfolder="root">📁 Root</button>`;
+  crumbs.forEach((c, idx) => {
+    html += `<span class="crumb-sep">/</span>`;
+    if (idx === crumbs.length - 1) {
+      html += `<span style="font-weight:700;color:var(--ink);padding:3px 6px">${esc(c.folder_name)}</span>`;
+    } else {
+      html += `<button class="crumb-btn" data-navfolder="${c.folder_id}">${esc(c.folder_name)}</button>`;
+    }
+  });
+
+  if (currentFolderId != null) {
+    const parentFolder = crumbs.length > 1 ? crumbs[crumbs.length - 2].folder_id : 'root';
+    html += `<button class="btn" data-navfolder="${parentFolder}" style="margin-left:auto;padding:5px 9px;font-size:11px">⬆ Up to parent</button>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderFolderGrid() {
+  const container = $('#folderGridContainer');
+  if (!container) return;
+
+  const visibleFolders = allFolders.filter(f => {
+    if (currentFolderId == null) {
+      return f.parent_folder_id == null;
+    }
+    return f.parent_folder_id === currentFolderId;
+  });
+
+  if (visibleFolders.length === 0) {
+    container.innerHTML = currentFolderId == null
+      ? `<div style="grid-column:1/-1;padding:12px 14px;background:#fcfcff;border:1px dashed #dcdbe8;border-radius:11px;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:space-between"><span>No folders at root level yet.</span><button class="btn" data-action="new-folder" style="padding:6px 10px;font-size:11px">＋ Create folder</button></div>`
+      : `<div style="grid-column:1/-1;padding:12px 14px;background:#fcfcff;border:1px dashed #dcdbe8;border-radius:11px;color:var(--muted);font-size:12px">This folder has no nested subdirectories.</div>`;
+    return;
+  }
+
+  container.innerHTML = visibleFolders.map(f => {
+    const subCount = allFolders.filter(x => x.parent_folder_id === f.folder_id).length;
+    const fileCount = files.filter(x => x.folderId === f.folder_id).length;
+    const label = `${fileCount} file${fileCount === 1 ? '' : 's'}${subCount > 0 ? `, ${subCount} folder${subCount === 1 ? '' : 's'}` : ''}`;
+
+    return `
+      <div class="foldercard" data-openfolder="${f.folder_id}" title="Click to open ${esc(f.folder_name)}">
+        <div class="folderinfo">
+          <div class="foldericon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+          <div class="foldernames">
+            <strong>${esc(f.folder_name)}</strong>
+            <small>${label}</small>
+          </div>
+        </div>
+        <button class="mini" data-foldermenu="${f.folder_id}" title="Folder actions" onclick="event.stopPropagation()">···</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function isFileInConflict(f) {
+  if (!f) return false;
+  if (f.status === 'LOCKED') return true;
+  const l = locks.find(x => x.fileId === f.id);
+  if (l && l.queue && l.queue.length > 0) return true;
+  return false;
+}
+
 function renderRecent() {
   let arr = files.slice(0, 5);
   $('#recentFiles').innerHTML = arr.length
-    ? arr.map(f => `<tr><td><div class="filecell">${fileIcon(f.type)}<span class="filemeta">${esc(f.name)}<small>${esc(f.size)}</small></span></div></td><td>${esc(f.op)}</td><td>${esc(f.updated)}</td><td>${pill(f.status)}</td><td><button class="mini" data-filemenu="${f.id}" title="File actions">···</button></td></tr>`).join('')
-    : '<tr><td colspan="5"><div class="empty">No recent files found.</div></td></tr>';
+    ? arr.map(f => {
+        const inConflict = isFileInConflict(f);
+        const statusHtml = inConflict
+          ? `<span class="pill amber" style="cursor:pointer" onclick="openConflictModal(${f.id})" title="Click to review concurrent write conflict">⚠ In Conflict</span>`
+          : pill(f.status);
+        const actionHtml = `
+          <div style="display:flex;align-items:center;gap:6px">
+            ${inConflict ? `<button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="openConflictModal(${f.id})" title="Review and resolve write conflict">⚠ Resolve</button>` : ''}
+            <button class="btn soft" style="padding:4px 8px;font-size:10px" onclick="openVersionsModal(${f.id})" title="View version history">🕒 Versions</button>
+            <button class="mini" data-filemenu="${f.id}" title="File actions">···</button>
+          </div>
+        `;
+        const shareBadge = f.permission && f.permission !== 'OWNER' && f.permission !== 'ADMIN'
+          ? ` · <span class="pill blue" style="padding:2px 5px;font-size:9px">Shared</span>`
+          : '';
+        return `<tr><td><div class="filecell">${fileIcon(f.type)}<span class="filemeta">${esc(f.name)}<small>${esc(f.size)}${shareBadge}</small></span></div></td><td>${esc(f.folder)}</td><td>${esc(f.size)}</td><td>${esc(f.updated)}</td><td>${statusHtml}</td><td>${actionHtml}</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="6"><div class="empty">No recent files found in database.</div></td></tr>';
 }
 
 function renderFiles() {
   let q = ($('#globalSearch').value || '').toLowerCase();
-  let folder = $('#folderFilter')?.value || 'all';
+  let filterVal = $('#folderFilter')?.value || 'all';
   let type = $('#typeFilter')?.value || 'all';
-  let arr = files.filter(f =>
-    (f.name.toLowerCase().includes(q) || f.folder.toLowerCase().includes(q)) &&
-    (folder === 'all' || f.folder === folder) &&
-    (type === 'all' || f.type === type)
-  );
-  $('#fileCount').textContent = `${arr.length} items`;
+
+  let arr = files.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(q) || f.folder.toLowerCase().includes(q);
+    const matchType = type === 'all' || f.type === type;
+    let matchFolder = true;
+
+    if (filterVal === 'all') {
+      if (currentFolderId != null) {
+        matchFolder = f.folderId === currentFolderId;
+      }
+    } else if (filterVal === 'root') {
+      matchFolder = f.folderId == null;
+    } else {
+      matchFolder = String(f.folderId) === String(filterVal);
+    }
+
+    return matchSearch && matchType && matchFolder;
+  });
+
+  $('#fileCount').textContent = `${arr.length} item${arr.length === 1 ? '' : 's'}`;
   $('#allFiles').innerHTML = arr.length
-    ? arr.map(f => `<tr><td><div class="filecell">${fileIcon(f.type)}<span class="filemeta">${esc(f.name)}<small>${esc(f.type)} file</small></span></div></td><td>${esc(f.folder)}</td><td>${esc(f.size)}</td><td>${esc(f.updated)}</td><td>${pill(f.status)}</td><td><button class="mini" data-filemenu="${f.id}" title="File actions">···</button></td></tr>`).join('')
-    : `<tr><td colspan="6"><div class="empty">No files match your search.</div></td></tr>`;
+    ? arr.map(f => {
+        const inConflict = isFileInConflict(f);
+        const statusHtml = inConflict
+          ? `<span class="pill amber" style="cursor:pointer" onclick="openConflictModal(${f.id})" title="Click to review concurrent write conflict">⚠ In Conflict</span>`
+          : pill(f.status);
+        const actionHtml = `
+          <div style="display:flex;align-items:center;gap:6px">
+            ${inConflict ? `<button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="openConflictModal(${f.id})" title="Review and resolve write conflict">⚠ Resolve</button>` : ''}
+            <button class="btn soft" style="padding:4px 8px;font-size:10px" onclick="openVersionsModal(${f.id})" title="View version history">🕒 Versions</button>
+            <button class="mini" data-filemenu="${f.id}" title="File actions">···</button>
+          </div>
+        `;
+        const shareBadge = f.permission && f.permission !== 'OWNER' && f.permission !== 'ADMIN'
+          ? ` · <span class="pill blue" style="padding:2px 5px;font-size:9px">Shared (${esc(f.permission)})</span>`
+          : '';
+        return `<tr><td><div class="filecell">${fileIcon(f.type)}<span class="filemeta">${esc(f.name)}<small>${esc(f.type)} file${shareBadge}</small></span></div></td><td>${esc(f.folder)}</td><td>${esc(f.size)}</td><td>${esc(f.updated)}</td><td>${statusHtml}</td><td>${actionHtml}</td></tr>`;
+      }).join('')
+    : `<tr><td colspan="6"><div class="empty">${currentFolderId != null ? 'No files in this folder yet. Click "Upload to current folder" to add files.' : 'No files match your search.'}</div></td></tr>`;
 }
 
 function renderBars() {
@@ -368,13 +1097,6 @@ function renderBars() {
   ).join('');
 }
 
-function renderActivity() {
-  let arr = logs.slice(0, 4);
-  $('#recentActivity').innerHTML = arr.length
-    ? arr.map(e => `<div class="event"><div class="eventicon" style="background:${e.type === 'DEADLOCK' ? '#ffeaed' : e.type === 'LOCK' ? '#fff4dc' : e.type === 'PROCESS' ? '#f0eeff' : '#eaf1ff'};color:${e.type === 'DEADLOCK' ? '#c45161' : e.type === 'LOCK' ? '#b7791f' : e.type === 'PROCESS' ? '#7164d9' : '#4678c8'}">${e.type === 'FILE' ? '↗' : e.type === 'LOCK' ? '⌑' : e.type === 'PROCESS' ? '▤' : '!'}</div><div><strong>${esc(e.type)} event</strong><p>${esc(e.desc)}</p></div><time>${esc(e.time)}</time></div>`).join('')
-    : '<div class="empty">No recent activity.</div>';
-}
-
 function renderProcesses() {
   let filter = $('#processFilter')?.value || 'all';
   let q = ($('#globalSearch').value || '').toLowerCase();
@@ -383,8 +1105,8 @@ function renderProcesses() {
     (p.id.toLowerCase().includes(q) || p.file.toLowerCase().includes(q) || p.op.toLowerCase().includes(q))
   );
   $('#processTable').innerHTML = arr.length
-    ? arr.map(p => `<tr><td><b style="color:#30394c">${esc(p.id)}</b></td><td>${esc(p.op)}</td><td>${esc(p.file)}</td><td>${p.burst} units</td><td>${p.priority}</td><td>${pill(p.state)}</td><td>${p.state === 'COMPLETED' || p.state === 'TERMINATED' ? `W ${p.waiting ?? 0} · T ${p.turnaround ?? p.burst}` : '—'}</td></tr>`).join('')
-    : '<tr><td colspan="7"><div class="empty">No processes match.</div></td></tr>';
+    ? arr.map(p => `<tr><td><b style="color:#30394c">${esc(p.id)}</b></td><td>${esc(p.op)}</td><td>${esc(p.file)}</td><td>${p.burst} units</td><td>${p.priority}</td><td>${pill(p.state)}</td><td>${p.state === 'COMPLETED' || p.state === 'TERMINATED' ? `Waiting: ${p.waiting ?? 0} · Turnaround: ${p.turnaround ?? p.burst}` : 'Queued'}</td></tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty">No processes match the filter.</div></td></tr>';
 
   const readyCount = processes.filter(p => p.state === 'READY').length;
   const runningCount = processes.filter(p => p.state === 'RUNNING').length;
@@ -393,8 +1115,11 @@ function renderProcesses() {
   const activeCount = readyCount + runningCount + waitingCount;
 
   $('#statProcesses').textContent = String(activeCount).padStart(2, '0');
-  const compEl = $('#completedCount');
-  if (compEl) compEl.textContent = String(completedCount);
+  $('#statProcessesSub').textContent = `${readyCount} ready · ${runningCount} running · ${waitingCount} waiting`;
+  $('#monReadyCount').textContent = String(readyCount);
+  $('#monRunningCount').textContent = String(runningCount);
+  $('#monWaitingCount').textContent = String(waitingCount);
+  $('#monCompletedCount').textContent = String(completedCount);
 }
 
 function calculateSchedule() {
@@ -428,7 +1153,7 @@ function renderSchedule() {
   let d = calculateSchedule();
   $('#gantt').innerHTML = d.length
     ? d.map(p => `<div class="gblock" style="flex:${Math.max(1, p.burst)}">${esc(p.id)}<small>${p.start} – ${p.completion}</small></div>`).join('')
-    : '<div class="empty" style="width:100%">No processes available for scheduling.</div>';
+    : '<div class="empty" style="width:100%">No processes currently available for scheduling.</div>';
   $('#timeline').innerHTML = `<span>0 units</span><span>${Math.round(d.reduce((a, p) => a + p.burst, 0) / 2)} units</span><span>${d.length ? d[d.length - 1].completion : 0} units</span>`;
   let avg = k => d.length ? d.reduce((s, p) => s + (p[k] || 0), 0) / d.length : 0;
   $('#scheduleMetrics').innerHTML = [
@@ -444,9 +1169,12 @@ function renderSchedule() {
 
 function renderLocks() {
   $('#lockList').innerHTML = locks.length
-    ? locks.map(l => `<div class="lockrow"><div class="lockname">${fileIcon(l.file.endsWith('xlsx') || l.file.endsWith('csv') ? 'XLSX' : 'DOCX')}<span>${esc(l.file)}<small>${esc(l.mode)} lock</small></span></div><div><small style="display:block;color:var(--muted);margin-bottom:5px">HOLDER</small><b>${esc(l.holder)}</b></div><div class="holder"><small style="display:block;color:var(--muted);margin-bottom:5px">WAITING</small><b>${l.queue.length ? esc(l.queue.join(', ')) : '—'}</b></div>${pill(l.status)}</div>`).join('')
+    ? locks.map(l => `<div class="lockrow"><div class="lockname">${fileIcon(l.file.endsWith('xlsx') || l.file.endsWith('csv') ? 'XLSX' : 'DOCX')}<span>${esc(l.file)}<small>${esc(l.mode)} lock</small></span></div><div><small style="display:block;color:var(--muted);margin-bottom:5px">HOLDER</small><b>${esc(l.holder)}</b></div><div class="holder"><small style="display:block;color:var(--muted);margin-bottom:5px">WAITING QUEUE</small><b>${l.queue.length ? esc(l.queue.join(', ')) : '—'}</b></div>${pill(l.status)}</div>`).join('')
     : '<div class="empty">No active locks in kernel registry.</div>';
-  $('#statLocks').textContent = String(locks.filter(l => l.holder !== '—').length).padStart(2, '0');
+  const activeCount = locks.filter(l => l.holder !== '—').length;
+  $('#statLocks').textContent = String(activeCount).padStart(2, '0');
+  $('#navLockCount').textContent = String(activeCount);
+  $('#activeLockBadge').textContent = `${activeCount} active`;
 }
 
 function renderDeadlocks() {
@@ -466,15 +1194,19 @@ function renderDeadlocks() {
     }
     if (victimEl) victimEl.textContent = `P${deadlocks.activeCycle[0]}`;
     $('#statDeadlocks').textContent = '01';
+    $('#navDeadlockCount').textContent = '1';
+    $('#statDeadlocksSub').textContent = 'Deadlock cycle active';
   } else {
-    if (headline) headline.textContent = 'No deadlocks detected';
-    if (desc) desc.textContent = 'Resource allocation graph is currently acyclic. All processes and lock acquisitions are safe.';
+    if (headline) headline.textContent = 'Resource allocation graph is acyclic';
+    if (desc) desc.textContent = 'Wait-for graph is acyclic. All running and waiting processes are operating safely without circular deadlocks.';
     if (cyclePill) {
-      cyclePill.textContent = 'No cycle';
+      cyclePill.textContent = 'Acyclic (Safe)';
       cyclePill.className = 'pill green';
     }
     if (victimEl) victimEl.textContent = 'None';
     $('#statDeadlocks').textContent = '00';
+    $('#navDeadlockCount').textContent = '0';
+    $('#statDeadlocksSub').textContent = 'No deadlocks detected';
   }
 
   const historyTbody = $('#recoveryHistory');
@@ -494,29 +1226,59 @@ function renderLogs() {
 }
 
 function renderAll() {
+  updateSessionUI();
+  renderFolderGrid();
+  renderBreadcrumbs();
   renderRecent();
   renderFiles();
   renderBars();
-  renderActivity();
   renderProcesses();
   renderSchedule();
   renderLocks();
   renderDeadlocks();
   renderLogs();
   $('#statFiles').textContent = String(files.length);
+
+  if (currentUser && currentUser.role === 'ADMIN') {
+    $('#statFilesSub').textContent = `System-wide · ${allFolders.length} folders · ${files.length} files`;
+  } else {
+    const ownedCount = files.filter(f => f.ownerId === (currentUser ? currentUser.user_id : null)).length;
+    const sharedCount = files.length - ownedCount;
+    const shareDetail = sharedCount > 0 ? ` (${ownedCount} owned, ${sharedCount} shared)` : '';
+    $('#statFilesSub').textContent = `${allFolders.length} folders · ${files.length} files${shareDetail}`;
+  }
 }
 
 // ---- Navigation ----
 
 function navTo(v) {
-  let names = { dashboard: 'Overview', files: 'File explorer', processes: 'Process monitor', scheduler: 'Scheduler', locks: 'Lock manager', deadlocks: 'Deadlock centre', activity: 'Activity log' };
-  if (!names[v]) return;
+  let names = {
+    landing: '',
+    dashboard: 'Overview',
+    files: 'File explorer',
+    processes: 'Process monitor',
+    scheduler: 'Scheduler',
+    locks: 'Lock manager',
+    deadlocks: 'Deadlock centre',
+    activity: 'Activity log'
+  };
+  if (!names.hasOwnProperty(v)) return;
   $$('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
   $$('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  $('#crumb').textContent = names[v];
+
+  const crumbWrap = $('#crumbWrap');
+  if (crumbWrap) {
+    if (v === 'landing') {
+      crumbWrap.style.display = 'none';
+    } else {
+      crumbWrap.style.display = 'inline-flex';
+      $('#crumb').textContent = names[v];
+    }
+  }
   $('#sidebar').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (v === 'files') renderFiles();
+
+  if (v === 'files') { renderFolderGrid(); renderBreadcrumbs(); renderFiles(); }
   if (v === 'processes') renderProcesses();
   if (v === 'scheduler') renderSchedule();
   if (v === 'locks') renderLocks();
@@ -526,28 +1288,84 @@ function navTo(v) {
 
 // ---- Modals & Actions ----
 
-function openModal(mode) {
+function openModal(mode, extraData = {}) {
   modalMode = mode;
   $('#modalBack').classList.add('open');
-  let title = mode === 'folder' ? 'Create a folder' : mode === 'process' ? 'Simulate / Submit process' : 'Upload files';
-  $('#modalTitle').textContent = title;
-  $('#modalDesc').textContent = mode === 'folder'
-    ? 'Create a new folder in the ConflictCore workspace database.'
-    : mode === 'process'
-    ? 'Submit an operation to the DBMS and OS kernel queue.'
-    : 'Choose files from your computer to stage and upload to the server.';
+  let title = 'Action';
+  let desc = '';
 
   if (mode === 'folder') {
-    $('#modalFields').innerHTML = '<label for="folderName">Folder name</label><input id="folderName" placeholder="e.g. Semester Project" maxlength="60">';
+    title = 'Create a new folder';
+    const currFolder = allFolders.find(x => x.folder_id === currentFolderId);
+    desc = currFolder ? `Create a folder inside "${currFolder.folder_name}".` : 'Create a folder at Root workspace level.';
+    $('#modalFields').innerHTML = `
+      <label for="folderName">Folder name</label>
+      <input id="folderName" placeholder="e.g. Analytics Reports" maxlength="60">
+    `;
     $('#confirmModal').textContent = 'Create folder';
     setTimeout(() => $('#folderName')?.focus(), 50);
+  } else if (mode === 'rename-folder') {
+    title = 'Rename folder';
+    desc = `Enter a new name for "${extraData.name}".`;
+    $('#modalFields').innerHTML = `
+      <label for="folderNewName">Folder name</label>
+      <input id="folderNewName" value="${esc(extraData.name)}" maxlength="60">
+      <input type="hidden" id="folderEditId" value="${extraData.id}">
+    `;
+    $('#confirmModal').textContent = 'Save changes';
+    setTimeout(() => $('#folderNewName')?.focus(), 50);
+  } else if (mode === 'auth') {
+    title = extraData.tab === 'register' ? 'Create ConflictCore Account' : 'Sign In to Workspace';
+    desc = 'Authenticate with your ConflictCore credentials.';
+    const isReg = extraData.tab === 'register';
+    $('#modalFields').innerHTML = `
+      <div class="modaltabs">
+        <button class="modaltab ${!isReg ? 'active' : ''}" type="button" id="tabSignIn">Sign In</button>
+        <button class="modaltab ${isReg ? 'active' : ''}" type="button" id="tabRegister">Register</button>
+      </div>
+      <label for="authUsername">Username or Email</label>
+      <input id="authUsername" placeholder="e.g. admin_super or user@conflictcore.io" autocomplete="username">
+      ${isReg ? '<label for="authEmail">Email address</label><input id="authEmail" type="email" placeholder="e.g. researcher@conflictcore.io">' : ''}
+      <label for="authPassword">Password</label>
+      <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+    `;
+    $('#confirmModal').textContent = isReg ? 'Register account' : 'Sign in';
+
+    $('#tabSignIn')?.addEventListener('click', () => openModal('auth', { tab: 'signin' }));
+    $('#tabRegister')?.addEventListener('click', () => openModal('auth', { tab: 'register' }));
+    setTimeout(() => $('#authUsername')?.focus(), 50);
   } else if (mode === 'process') {
-    $('#modalFields').innerHTML = '<label for="processOp">Operation</label><select id="processOp"><option value="UPLOAD">UPLOAD (Requires staged file)</option><option value="DOWNLOAD">DOWNLOAD</option><option value="MOVE">MOVE</option><option value="EDIT">EDIT (Pending OS impl)</option><option value="DELETE">DELETE (Direct DBMS)</option><option value="SHARE">SHARE (Pending OS impl)</option></select><label for="processFile">File (name or ID)</label><input id="processFile" placeholder="e.g. Project_Report.pdf or 1"><label for="processBurst">CPU burst time (units)</label><input id="processBurst" type="number" min="1" max="20" value="3"><label for="processPriority">Priority (1 = highest)</label><input id="processPriority" type="number" min="1" max="10" value="3">';
+    title = 'Simulate / Submit process';
+    desc = 'Submit an operation to the DBMS and OS kernel queue.';
+    $('#modalFields').innerHTML = `
+      <label for="processOp">Operation</label>
+      <select id="processOp">
+        <option value="UPLOAD">UPLOAD (Requires staged file)</option>
+        <option value="DOWNLOAD">DOWNLOAD</option>
+        <option value="MOVE">MOVE</option>
+        <option value="EDIT">EDIT</option>
+        <option value="DELETE">DELETE</option>
+      </select>
+      <label for="processFile">File (name or ID)</label>
+      <input id="processFile" placeholder="e.g. Project_Report.pdf or 1">
+      <label for="processBurst">CPU burst time (units)</label>
+      <input id="processBurst" type="number" min="1" max="20" value="3">
+      <label for="processPriority">Priority (1 = highest)</label>
+      <input id="processPriority" type="number" min="1" max="10" value="3">
+    `;
     $('#confirmModal').textContent = 'Submit process';
-  } else {
-    $('#modalFields').innerHTML = '<label>File selection</label><p style="margin:0">Select files from your device. Each file will be uploaded, queued in the OS scheduling pipeline, and committed upon CPU dispatch.</p>';
-    $('#confirmModal').textContent = 'Choose files';
+  } else if (mode === 'upload') {
+    title = 'Upload files';
+    const currFolder = allFolders.find(x => x.folder_id === currentFolderId);
+    desc = currFolder ? `Upload destination: "${currFolder.folder_name}".` : 'Upload destination: Root workspace.';
+    $('#modalFields').innerHTML = `
+      <p style="margin:0 0 12px;font-size:12px;color:var(--muted)">Files will be staged safely on disk and committed via the OS process scheduling pipeline.</p>
+    `;
+    $('#confirmModal').textContent = 'Choose files from device';
   }
+
+  $('#modalTitle').textContent = title;
+  $('#modalDesc').textContent = desc;
 }
 
 function closeModal() {
@@ -562,21 +1380,93 @@ async function confirmModal() {
       return;
     }
     try {
+      const ownerId = currentUser ? currentUser.user_id : 1;
       const res = await apiRequest('/folders', {
         method: 'POST',
-        body: JSON.stringify({ folder_name: n, owner_id: 1 })
+        body: JSON.stringify({
+          folder_name: n,
+          parent_folder_id: currentFolderId,
+          owner_id: ownerId
+        })
       });
       closeModal();
       toast(`Folder "${res.folder?.folder_name || n}" created.`);
-      await loadAll();
+      await loadFolders();
     } catch (err) {
       toast(`Failed to create folder: ${err.message}`);
+    }
+  } else if (modalMode === 'rename-folder') {
+    const editId = $('#folderEditId').value;
+    const n = $('#folderNewName').value.trim();
+    if (!n) {
+      toast('Please enter a valid folder name.');
+      return;
+    }
+    try {
+      await apiRequest(`/folders/${editId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ folder_name: n })
+      });
+      closeModal();
+      toast(`Folder renamed to "${n}".`);
+      await loadFolders();
+    } catch (err) {
+      toast(`Failed to rename folder: ${err.message}`);
+    }
+  } else if (modalMode === 'auth') {
+    const username = $('#authUsername').value.trim();
+    const password = $('#authPassword').value;
+    const emailEl = $('#authEmail');
+    const isRegister = !!emailEl;
+
+    if (!username || !password) {
+      toast('Please enter both username/email and password.');
+      return;
+    }
+
+    try {
+      if (isRegister) {
+        const email = emailEl.value.trim();
+        if (!email) {
+          toast('Please enter a valid email address.');
+          return;
+        }
+        const res = await apiRequest('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ username, email, password })
+        });
+        currentUser = res.user;
+        authToken = res.token;
+        localStorage.setItem('conflictcore_user', JSON.stringify(currentUser));
+        localStorage.setItem('conflictcore_token', authToken);
+        closeModal();
+        toast(`Account created! Welcome, ${currentUser.username}.`);
+        updateSessionUI();
+        navTo('dashboard');
+      } else {
+        const res = await apiRequest('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+        currentUser = res.user;
+        authToken = res.token;
+        localStorage.setItem('conflictcore_user', JSON.stringify(currentUser));
+        localStorage.setItem('conflictcore_token', authToken);
+        closeModal();
+        toast(`Welcome back, ${currentUser.username}!`);
+        updateSessionUI();
+        navTo('dashboard');
+      }
+      await loadAll();
+    } catch (err) {
+      toast(`Authentication failed: ${err.message}`);
     }
   } else if (modalMode === 'process') {
     const inputVal = $('#processFile').value.trim();
     const op = $('#processOp').value;
     const burst = Math.max(1, Math.min(20, Number($('#processBurst').value) || 3));
     const priority = Math.max(1, Math.min(10, Number($('#processPriority').value) || 3));
+    const ownerId = currentUser ? currentUser.user_id : 1;
 
     let matchedFile = files.find(f => f.name.toLowerCase() === inputVal.toLowerCase() || String(f.id) === inputVal);
     let fileId = matchedFile ? matchedFile.id : (Number(inputVal) || null);
@@ -585,7 +1475,7 @@ async function confirmModal() {
       const opRes = await apiRequest('/operations', {
         method: 'POST',
         body: JSON.stringify({
-          user_id: 1,
+          user_id: ownerId,
           file_id: fileId,
           operation_type: op,
           priority: priority,
@@ -603,7 +1493,7 @@ async function confirmModal() {
           toast(`Operation created in DB (#${createdOp.operation_id}), but OS execute returned: ${execErr.message}`);
         }
       } else {
-        toast(`Operation #${createdOp.operation_id} (${op}) recorded in DB. OS execution for ${op} is not implemented yet (501).`);
+        toast(`Operation #${createdOp.operation_id} (${op}) recorded in DB.`);
       }
       await loadAll();
     } catch (err) {
@@ -619,12 +1509,17 @@ async function confirmModal() {
 
 async function handleUpload(list) {
   if (!list || !list.length) return;
-  toast(`Starting upload for ${list.length} file(s)...`);
+  toast(`Uploading ${list.length} file(s)...`);
+  const ownerId = currentUser ? currentUser.user_id : 1;
 
   for (let f of list) {
     try {
       const formData = new FormData();
       formData.append('file', f);
+      formData.append('owner_id', ownerId);
+      if (currentFolderId != null) {
+        formData.append('folder_id', currentFolderId);
+      }
 
       const stageRes = await apiRequest('/files/upload', {
         method: 'POST',
@@ -635,24 +1530,20 @@ async function handleUpload(list) {
 
       await apiRequest(`/operations/${opId}/execute`, { method: 'POST' });
 
-      // Inspect ready queue before auto-dispatch
+      // Automatically dispatch from OS ready queue if available
       const procSnap = await apiRequest('/processes');
       const headReady = procSnap.readyQueue && procSnap.readyQueue[0];
       const matchingProc = (procSnap.processes || []).find(p => p.id === headReady);
 
       if (matchingProc && matchingProc.name === `Operation-${opId}`) {
         const dispRes = await apiRequest('/processes/dispatch', { method: 'POST' });
-        if (dispRes.status === 'COMPLETED' && dispRes.operationId === opId) {
-          toast(`Uploaded & committed: ${f.name} (File #${dispRes.fileId})`);
-        } else if (dispRes.status === 'COMPLETED' && dispRes.operationId !== opId) {
-          toast(`A different operation was dispatched (Op #${dispRes.operationId || 'unknown'}). ${f.name} remains queued or pending; check the operations list.`);
-        } else if (dispRes.status === 'IDLE') {
-          toast(`Dispatch returned IDLE. ${f.name} (Op #${opId}) remains queued in ready queue.`);
+        if (dispRes.status === 'COMPLETED') {
+          toast(`Uploaded & committed: ${f.name}`);
         } else {
-          toast(`Dispatch status unclear (${dispRes.status || 'unknown'}). Check operations list for ${f.name} (Op #${opId}).`);
+          toast(`Queued in OS ready queue (Op #${opId}). Click "Dispatch next" to process.`);
         }
       } else {
-        toast(`Staged & queued ${f.name} in OS ready queue (Op #${opId}). Click "Dispatch next" to process.`);
+        toast(`Staged ${f.name} in OS ready queue (Op #${opId}).`);
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -670,9 +1561,9 @@ async function dispatchNext() {
   try {
     const res = await apiRequest('/processes/dispatch', { method: 'POST' });
     if (res.status === 'COMPLETED') {
-      toast(`⚡ Dispatched Op #${res.operationId} (${res.fileName || 'process'}) · State: COMPLETED`);
+      toast(`⚡ Dispatched Op #${res.operationId} (${res.fileName || 'process'}) · COMPLETED`);
     } else if (res.status === 'IDLE') {
-      toast(`Ready queue is empty (No process waiting for CPU dispatch).`);
+      toast(`Ready queue is empty. No processes awaiting CPU dispatch.`);
     } else {
       toast(res.message || `Dispatch response: ${res.status}`);
     }
@@ -682,18 +1573,72 @@ async function dispatchNext() {
   }
 }
 
+// ---- Folder Actions Menu ----
+
+async function folderMenu(id) {
+  let f = allFolders.find(x => String(x.folder_id) === String(id));
+  if (!f) return;
+
+  let choice = prompt(`Folder actions for "${f.folder_name}":\nType: open, rename, delete`, 'open');
+  if (!choice) return;
+  choice = choice.toLowerCase().trim();
+
+  if (choice === 'open') {
+    currentFolderId = f.folder_id;
+    renderFolderGrid();
+    renderBreadcrumbs();
+    renderFiles();
+  } else if (choice === 'rename') {
+    openModal('rename-folder', { id: f.folder_id, name: f.folder_name });
+  } else if (choice === 'delete') {
+    if (confirm(`Are you sure you want to delete folder "${f.folder_name}"?\n(Child items will be safely moved to parent)`)) {
+      try {
+        await apiRequest(`/folders/${f.folder_id}`, { method: 'DELETE' });
+        toast(`Folder "${f.folder_name}" deleted.`);
+        if (currentFolderId === f.folder_id) currentFolderId = f.parent_folder_id;
+        await loadFolders();
+        await loadFiles();
+      } catch (err) {
+        toast(`Failed to delete folder: ${err.message}`);
+      }
+    }
+  }
+}
+
 // ---- File Actions Menu ----
 
 async function fileMenu(id) {
   let f = files.find(x => String(x.id) === String(id));
   if (!f) return;
-  let action = prompt(`Actions for ${f.name}\nType: download, rename, move, trash, delete, details`, 'details');
+  const inConflict = isFileInConflict(f);
+  const isOwnerOrAdmin = currentUser && (currentUser.role === 'ADMIN' || f.ownerId === currentUser.user_id);
+  const shareOpt = isOwnerOrAdmin ? 'share, ' : '';
+  let action = prompt(`Actions for "${f.name}":\nType: versions, ${inConflict ? 'conflict, ' : ''}${shareOpt}download, rename, move, trash, delete, details`, inConflict ? 'conflict' : 'versions');
   if (!action) return;
   action = action.toLowerCase().trim();
 
-  if (action === 'download') {
+  if (action === 'versions') {
+    openVersionsModal(f.id);
+  } else if (action === 'conflict' || action === 'resolve') {
+    openConflictModal(f.id);
+  } else if (action === 'share') {
+    let target = prompt(`Share "${f.name}" with another user:\nEnter recipient username (e.g. avni_n, shubham_k, jahnvi_s):`);
+    if (target && target.trim()) {
+      try {
+        const res = await apiRequest(`/files/${f.id}/share`, {
+          method: 'POST',
+          body: JSON.stringify({ target_username: target.trim(), permission_type: 'READ' })
+        });
+        toast(res.message || `File shared with ${target.trim()}`);
+        await loadFiles();
+        renderFiles();
+      } catch (err) {
+        toast(`Share failed: ${err.message}`);
+      }
+    }
+  } else if (action === 'download') {
     toast(`Downloading ${f.name}...`);
-    window.location.href = `${API_BASE}/files/${f.id}/download`;
+    window.location.href = `${API_BASE}/files/${f.id}/download?token=${encodeURIComponent(authToken || '')}`;
   } else if (action === 'rename') {
     let n = prompt('Enter new file name:', f.name);
     if (n && n.trim() && n.trim() !== f.name) {
@@ -702,44 +1647,28 @@ async function fileMenu(id) {
           method: 'PUT',
           body: JSON.stringify({ file_name: n.trim() })
         });
-        toast(`Renamed "${f.name}" to "${n.trim()}".`);
-        await loadAll();
+        toast(`Renamed to "${n.trim()}".`);
+        await loadFiles();
+        renderFiles();
       } catch (err) {
         toast(`Rename failed: ${err.message}`);
       }
     }
   } else if (action === 'move') {
-    let folderNames = [...folders];
-    let dest = prompt(`Move "${f.name}" to folder:\nAvailable: ${folderNames.join(', ')}`, f.folder);
-    if (dest && dest.trim() && dest.trim() !== f.folder) {
-      let targetName = dest.trim();
-      let matchedEntry = [...folderMap.entries()].find(([, name]) => name.toLowerCase() === targetName.toLowerCase());
-      let targetFolderId = matchedEntry ? matchedEntry[0] : null;
-
-      if (!targetFolderId) {
-        if (confirm(`Folder "${targetName}" does not exist in DB. Create it now?`)) {
-          try {
-            const newF = await apiRequest('/folders', {
-              method: 'POST',
-              body: JSON.stringify({ folder_name: targetName, owner_id: 1 })
-            });
-            targetFolderId = newF.folder.folder_id;
-          } catch (err) {
-            toast(`Failed to create destination folder: ${err.message}`);
-            return;
-          }
-        } else {
-          return;
-        }
-      }
-
+    let folderOptions = allFolders.map(x => `${x.folder_id}: ${x.folder_name}`).join('\n');
+    let dest = prompt(`Move "${f.name}" to folder.\nEnter folder ID or "root" for Root workspace:\n${folderOptions}`, f.folderId || 'root');
+    if (dest !== null) {
+      dest = dest.trim().toLowerCase();
+      let targetFolderId = (dest === 'root' || dest === '' || dest === '0') ? null : Number(dest);
       try {
         await apiRequest(`/files/${f.id}`, {
           method: 'PUT',
           body: JSON.stringify({ folder_id: targetFolderId })
         });
-        toast(`Moved "${f.name}" to "${targetName}".`);
-        await loadAll();
+        toast(`File moved successfully.`);
+        await loadFiles();
+        renderFiles();
+        renderFolderGrid();
       } catch (err) {
         toast(`Move failed: ${err.message}`);
       }
@@ -752,9 +1681,10 @@ async function fileMenu(id) {
           body: JSON.stringify({ status: 'TRASHED' })
         });
         toast(`"${f.name}" moved to trash.`);
-        await loadAll();
+        await loadFiles();
+        renderFiles();
       } catch (err) {
-        toast(`Trash update failed: ${err.message}`);
+        toast(`Trash failed: ${err.message}`);
       }
     }
   } else if (action === 'delete') {
@@ -762,13 +1692,246 @@ async function fileMenu(id) {
       try {
         await apiRequest(`/files/${f.id}`, { method: 'DELETE' });
         toast(`"${f.name}" permanently deleted.`);
-        await loadAll();
+        await loadFiles();
+        renderFiles();
+        renderFolderGrid();
       } catch (err) {
         toast(`Delete failed: ${err.message}`);
       }
     }
   } else {
-    alert(`File details:\nID: ${f.id}\nName: ${f.name}\nFolder: ${f.folder} (ID: ${f.folderId || 'none'})\nType: ${f.type}\nSize: ${f.size} (${f.sizeBytes} bytes)\nStatus: ${f.status}\nLast updated: ${f.updated}`);
+    alert(`File details:\nID: ${f.id}\nName: ${f.name}\nFolder: ${f.folder} (ID: ${f.folderId || 'Root'})\nSize: ${f.size} (${f.sizeBytes} bytes)\nStatus: ${f.status}\nOwner ID: ${f.ownerId}\nLast updated: ${f.updated}`);
+  }
+}
+
+// ---- Conflict Review & Version History Modals ----
+
+async function openConflictModal(fileId) {
+  const modalBack = $('#conflictModalBack');
+  const titleEl = $('#conflictModalTitle');
+  const bodyEl = $('#conflictModalBody');
+  const footerEl = $('#conflictModalFoot');
+  if (!modalBack || !bodyEl) return;
+
+  modalBack.classList.add('open');
+  titleEl.textContent = 'Checking Concurrency Conflicts...';
+  bodyEl.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted)">Inspecting file locks and process queues...</div>';
+  footerEl.innerHTML = '<button class="btn" onclick="closeConflictModal()">Close</button>';
+
+  try {
+    const data = await apiRequest(`/files/${fileId}/conflicts`);
+    titleEl.textContent = `Concurrent Conflict: ${data.file_name}`;
+
+    if (!data.hasConflict) {
+      bodyEl.innerHTML = `
+        <div style="padding:20px;background:#f3fbf7;border:1px solid #d2f2e1;border-radius:12px;color:#20785a">
+          <strong>✓ No Active Lock Contention</strong>
+          <p style="margin:5px 0 0;font-size:12px">No competing processes are waiting for locks on "${esc(data.file_name)}".</p>
+        </div>
+      `;
+      footerEl.innerHTML = '<button class="btn primary" onclick="closeConflictModal()">Dismiss</button>';
+      return;
+    }
+
+    const holder = data.activeHolder;
+    const waiter = data.conflictingWaiters && data.conflictingWaiters[0];
+
+    const parseDetails = d => {
+      if (!d) return {};
+      if (typeof d === 'string') {
+        try { return JSON.parse(d); } catch { return { raw: d }; }
+      }
+      return d;
+    };
+
+    const holderDetails = parseDetails(holder?.details);
+    const waiterDetails = parseDetails(waiter?.details);
+
+    bodyEl.innerHTML = `
+      <div class="alertbox" style="margin-bottom:14px">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 10 18H2zM12 9v5m0 3h.01"/></svg>
+        <div>
+          <strong>Concurrent Write Conflict Detected</strong>
+          <p>${esc(data.message)}</p>
+        </div>
+      </div>
+
+      <div class="comparison-grid">
+        <div class="party-card holder">
+          <div class="party-title">Current Lock Holder</div>
+          <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px">👤 ${esc(holder?.username || 'Unknown')}</div>
+          <div style="font-size:11px;color:var(--muted)">Process: <b>${esc(holder?.pid_alias || ('P' + holder?.process_id))}</b> · Lock: <b>ACQUIRED</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Op Type: <b>${esc(holder?.operation_type || 'EDIT')}</b></div>
+          <div style="margin-top:10px;padding:8px 10px;background:white;border-radius:8px;border:1px solid #dce6f9;font-size:11px">
+            <b>Changes summary:</b>
+            <div style="margin-top:3px;color:#4f5768">${esc(holderDetails.reason ? `Reason: ${holderDetails.reason}` : '')}${holderDetails.lines_changed ? ` (${holderDetails.lines_changed} lines)` : ''}</div>
+          </div>
+        </div>
+
+        <div class="party-card waiter">
+          <div class="party-title">Queued Waiter (Incoming)</div>
+          <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px">👤 ${esc(waiter?.username || 'Unknown')}</div>
+          <div style="font-size:11px;color:var(--muted)">Process: <b>${esc(waiter?.pid_alias || ('P' + waiter?.process_id))}</b> · Status: <b>WAITING</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Op Type: <b>${esc(waiter?.operation_type || 'EDIT')}</b></div>
+          <div style="margin-top:10px;padding:8px 10px;background:white;border-radius:8px;border:1px solid #f6e6c4;font-size:11px">
+            <b>Incoming changes:</b>
+            <div style="margin-top:3px;color:#4f5768">${esc(waiterDetails.reason ? `Reason: ${waiterDetails.reason}` : '')}${waiterDetails.lines_changed ? ` (${waiterDetails.lines_changed} lines)` : ''}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <label style="font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px">Select Resolution Strategy:</label>
+        <div class="strategy-list">
+          <label class="strategy-option">
+            <input type="radio" name="conflictStrategy" value="KEEP_CURRENT" checked>
+            <div>
+              <strong>Keep Current Version (${esc(holder?.username || 'Holder')})</strong>
+              <small>Retains ${esc(holder?.username || 'Holder')}'s active lock and aborts competing request from ${esc(waiter?.username || 'Waiter')}.</small>
+            </div>
+          </label>
+          <label class="strategy-option">
+            <input type="radio" name="conflictStrategy" value="ACCEPT_INCOMING">
+            <div>
+              <strong>Accept Incoming Changes (${esc(waiter?.username || 'Waiter')})</strong>
+              <small>Releases ${esc(holder?.username || 'Holder')}'s lock, grants exclusive write lock to ${esc(waiter?.username || 'Waiter')}, and transitions operation to RUNNING.</small>
+            </div>
+          </label>
+          <label class="strategy-option">
+            <input type="radio" name="conflictStrategy" value="CREATE_BRANCH">
+            <div>
+              <strong>Branch as Copy (CREATE_BRANCH)</strong>
+              <small>Preserves both versions! Forks incoming changes into a new branch file (e.g. ${esc(data.file_name.replace('.', '_branch.'))}) and keeps the original intact.</small>
+            </div>
+          </label>
+        </div>
+      </div>
+    `;
+
+    footerEl.innerHTML = `
+      <button class="btn" onclick="closeConflictModal()">Cancel</button>
+      <button class="btn primary" onclick="submitConflictResolution(${fileId})">Apply Resolution</button>
+    `;
+  } catch (err) {
+    bodyEl.innerHTML = `<div style="padding:16px;background:#fff2f4;color:var(--red);border-radius:10px">Failed to load conflict info: ${esc(err.message)}</div>`;
+    footerEl.innerHTML = '<button class="btn" onclick="closeConflictModal()">Close</button>';
+  }
+}
+
+function closeConflictModal() {
+  $('#conflictModalBack')?.classList.remove('open');
+}
+
+async function submitConflictResolution(fileId) {
+  const selected = document.querySelector('input[name="conflictStrategy"]:checked')?.value || 'KEEP_CURRENT';
+  const userId = currentUser ? currentUser.user_id : 1;
+
+  try {
+    toast('Applying conflict resolution...');
+    const res = await apiRequest(`/files/${fileId}/resolve-conflict`, {
+      method: 'POST',
+      body: JSON.stringify({
+        strategy: selected,
+        user_id: userId
+      })
+    });
+
+    closeConflictModal();
+    toast(`✓ ${res.message || 'Conflict resolved successfully.'}`);
+    await loadAll();
+  } catch (err) {
+    toast(`Failed to resolve conflict: ${err.message}`);
+  }
+}
+
+async function openVersionsModal(fileId) {
+  const modalBack = $('#versionsModalBack');
+  const titleEl = $('#versionsModalTitle');
+  const bodyEl = $('#versionsModalBody');
+  if (!modalBack || !bodyEl) return;
+
+  modalBack.classList.add('open');
+  titleEl.textContent = 'Loading File Versions...';
+  bodyEl.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted)">Retrieving version history from DBMS operations log...</div>';
+
+  try {
+    const data = await apiRequest(`/files/${fileId}/versions`);
+    titleEl.textContent = `Version History: ${data.file.file_name}`;
+
+    const versions = data.versions || [];
+    if (!versions.length) {
+      bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No operations recorded for this file yet.</div>';
+      return;
+    }
+
+    bodyEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fc;border-radius:10px;margin-bottom:14px;font-size:12px">
+        <div><strong>Total revisions:</strong> ${data.total_versions}</div>
+        <div><strong>Status:</strong> ${pill(data.file.status)}</div>
+        <div><strong>Size:</strong> ${formatSize(data.file.file_size_bytes)}</div>
+      </div>
+      <div class="version-timeline">
+        ${versions.map(v => {
+          const details = v.details || {};
+          let detailsText = '';
+          if (typeof details === 'object' && Object.keys(details).length) {
+            detailsText = Object.entries(details).map(([k, val]) => `${k}: ${val}`).join(' · ');
+          } else if (typeof details === 'string') {
+            detailsText = details;
+          }
+
+          return `
+            <div class="version-card">
+              <div class="version-tag">v${v.version_number}</div>
+              <div class="version-meta">
+                <div class="version-head">
+                  <span style="font-weight:700;color:var(--ink)">${esc(v.operation_type)} by 👤 ${esc(v.author_name || 'System')}</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    ${pill(v.status)}
+                    <small style="color:var(--muted)">${formatDate(v.created_at, true)}</small>
+                  </div>
+                </div>
+                ${detailsText ? `<div class="version-detail">📝 ${esc(detailsText)}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (err) {
+    bodyEl.innerHTML = `<div style="padding:16px;background:#fff2f4;color:var(--red);border-radius:10px">Failed to load versions: ${esc(err.message)}</div>`;
+  }
+}
+
+function closeVersionsModal() {
+  $('#versionsModalBack')?.classList.remove('open');
+}
+
+window.openConflictModal = openConflictModal;
+window.closeConflictModal = closeConflictModal;
+window.submitConflictResolution = submitConflictResolution;
+window.openVersionsModal = openVersionsModal;
+window.closeVersionsModal = closeVersionsModal;
+
+// ---- Quick Demo Logins ----
+
+async function quickDemoLogin(username) {
+  try {
+    const password = username === 'admin_super' ? 'admin123' : 'password123';
+    const res = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    currentUser = res.user;
+    authToken = res.token;
+    localStorage.setItem('conflictcore_user', JSON.stringify(currentUser));
+    localStorage.setItem('conflictcore_token', authToken);
+    toast(`Logged in as ${currentUser.username} (${currentUser.role}).`);
+    updateSessionUI();
+    navTo('dashboard');
+    await loadAll();
+  } catch (err) {
+    toast(`Demo login failed: ${err.message}`);
   }
 }
 
@@ -776,6 +1939,34 @@ async function fileMenu(id) {
 
 $$('#nav button').forEach(b => b.addEventListener('click', () => navTo(b.dataset.view)));
 $$('[data-go]').forEach(b => b.addEventListener('click', () => navTo(b.dataset.go)));
+
+$('#brandBtn').addEventListener('click', () => navTo('landing'));
+$('#landingSignInBtn')?.addEventListener('click', () => openModal('auth', { tab: 'signin' }));
+$('#landingRegisterBtn')?.addEventListener('click', () => openModal('auth', { tab: 'register' }));
+$('#landingExploreBtn')?.addEventListener('click', () => navTo('dashboard'));
+
+$$('[data-demouser]').forEach(btn => {
+  btn.addEventListener('click', () => quickDemoLogin(btn.dataset.demouser));
+});
+
+$('#authActionBtn').addEventListener('click', async () => {
+  if (currentUser) {
+    if (confirm('Sign out of ConflictCore?')) {
+      try {
+        await apiRequest('/auth/logout', { method: 'POST' });
+      } catch {}
+      currentUser = null;
+      authToken = null;
+      localStorage.removeItem('conflictcore_user');
+      localStorage.removeItem('conflictcore_token');
+      toast('Signed out successfully.');
+      updateSessionUI();
+      navTo('landing');
+    }
+  } else {
+    openModal('auth', { tab: 'signin' });
+  }
+});
 
 $$('[data-action]').forEach(b => b.addEventListener('click', async () => {
   let a = b.dataset.action;
@@ -785,7 +1976,7 @@ $$('[data-action]').forEach(b => b.addEventListener('click', async () => {
   if (a === 'dispatch-next') await dispatchNext();
   if (a === 'refresh') {
     await loadAll();
-    toast(isBackendConnected ? 'Workspace refreshed from live backend.' : 'Refreshed view (backend unreachable).');
+    toast(isBackendConnected ? 'Refreshed from live database.' : 'Refreshed (backend degraded).');
   }
   if (a === 'reset-schedule') {
     try {
@@ -803,17 +1994,8 @@ $$('[data-action]').forEach(b => b.addEventListener('click', async () => {
     if (deadlocks.activeCycle) {
       toast(`Deadlock cycle detected: ${deadlocks.activeCycle.map(p => 'P' + p).join(' ↔ ')}`);
     } else {
-      toast('Detection run: No circular wait found (Graph is acyclic).');
+      toast('Acyclic: No circular wait found in Wait-For graph.');
     }
-  }
-  if (a === 'recover-demo') {
-    await loadDeadlocks();
-    if (deadlocks.activeCycle) {
-      toast(`Deadlock resolution is handled automatically by the OS layer during lock acquisition.`);
-    } else {
-      toast('No active deadlock cycle to recover from.');
-    }
-    renderDeadlocks();
   }
   if (a === 'export-log') {
     let csv = 'time,type,description,status\n' + logs.map(e => [e.time, e.type, e.desc, e.status].map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\n');
@@ -823,7 +2005,7 @@ $$('[data-action]').forEach(b => b.addEventListener('click', async () => {
     link.download = `conflictcore-activity-${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast('Live activity log exported as CSV.');
+    toast('Activity log exported as CSV.');
   }
 }));
 
@@ -838,9 +2020,43 @@ $('#algoButtons').addEventListener('click', async e => {
     });
     algo = res.algorithm || targetAlgo;
     renderSchedule();
-    toast(`Scheduler algorithm updated to ${algo}.`);
+    toast(`Scheduler algorithm switched to ${algo}.`);
   } catch (err) {
-    toast(`Failed to update algorithm: ${err.message}`);
+    toast(`Failed to switch algorithm: ${err.message}`);
+  }
+});
+
+// Folder Navigation clicks (Breadcrumbs & Folder cards)
+document.addEventListener('click', e => {
+  const navBtn = e.target.closest('[data-navfolder]');
+  if (navBtn) {
+    const fId = navBtn.dataset.navfolder;
+    currentFolderId = fId === 'root' ? null : Number(fId);
+    renderFolderGrid();
+    renderBreadcrumbs();
+    renderFiles();
+    return;
+  }
+
+  const openCard = e.target.closest('[data-openfolder]');
+  if (openCard) {
+    currentFolderId = Number(openCard.dataset.openfolder);
+    renderFolderGrid();
+    renderBreadcrumbs();
+    renderFiles();
+    return;
+  }
+
+  const fMenuBtn = e.target.closest('[data-foldermenu]');
+  if (fMenuBtn) {
+    folderMenu(fMenuBtn.dataset.foldermenu);
+    return;
+  }
+
+  const fileMenuBtn = e.target.closest('[data-filemenu]');
+  if (fileMenuBtn) {
+    fileMenu(fileMenuBtn.dataset.filemenu);
+    return;
   }
 });
 
@@ -854,19 +2070,20 @@ $('#cancelModal').addEventListener('click', closeModal);
 $('#confirmModal').addEventListener('click', confirmModal);
 $('#modalBack').addEventListener('click', e => { if (e.target === $('#modalBack')) closeModal(); });
 $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
-$('#notifBtn').addEventListener('click', () => { navTo('activity'); toast('Showing recent workspace events.'); });
-$('#aboutBtn').addEventListener('click', () => alert('ConflictCore: Integrated Conflict Resolution-Based Multi-User File Management System.\nCombining OS process scheduling, concurrency control, deadlock detection & DBMS-backed metadata.'));
-
-document.addEventListener('click', e => {
-  let b = e.target.closest('[data-filemenu]');
-  if (b) fileMenu(b.dataset.filemenu);
-});
+$('#notifBtn').addEventListener('click', () => { navTo('activity'); toast('Showing audit activity log.'); });
+$('#aboutBtn').addEventListener('click', () => alert('ConflictCore: Integrated Conflict Resolution-Based Multi-User File Management System.\n\nOS Process Scheduling (FCFS, SJF, Priority)\nConcurrency File Lock Registry & FIFO Waiting Queues\nDeadlock Detection & Graph Cycle Recovery\nTransactional MySQL ACID Persistence.'));
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
 // Initial boot
-loadAll();
+loadAll().then(() => {
+  if (currentUser) {
+    navTo('dashboard');
+  } else {
+    navTo('landing');
+  }
+});
 </script>
 </body></html>

@@ -24,9 +24,21 @@ ConflictCore aims to demonstrate how operating system principles and database ma
 
 Traditional file management systems focus primarily on storing, organizing, uploading, downloading, and modifying files. However, when multiple operations compete for shared resources, issues such as resource conflicts, synchronization problems, and deadlocks can arise.
 
+
+- **Authentication & User Management:** User registration and login powered by secure `bcryptjs` password hashing, token-based session management, and quick 1-click demo logins for Admin, Developer, and Collaborator roles.
+- **Hierarchical Folder Explorer:** Visual folder cards grid, recursive breadcrumb navigation, cycle prevention on folder movements, and cascading child relocation upon deletion.
+- **Full File Lifecycle:** Multipart file upload, staged disk storage, atomic metadata registration, file downloading, renaming, and moving to Root (`folder_id: null`).
+- **File Versioning & Conflict Review:** Transactional revision history tracking every operation, real-time concurrent write contention detection, and interactive 3-way conflict resolution (`KEEP_CURRENT`, `ACCEPT_INCOMING`, `CREATE_BRANCH`).
+- **CPU Process Scheduling:** Deterministic simulation and live kernel dispatching using First-Come-First-Served (FCFS), Shortest Job First (SJF), and Priority algorithms with live Gantt timeline and turnaround/waiting metrics.
+- **Resource Locking & Concurrency Control:** Strict exclusive mutual exclusion locks, FIFO waiting queues, and atomic lock release hooks upon process completion or abortion.
+- **Deadlock Cycle Detection & Recovery:** Live Wait-For graph analysis identifying directed cycles, deterministic victim selection (priority, arrival, PID), and automated clean rollback.
+- **Transactional MySQL Persistence:** ACID-compliant MySQL 8.0 storage managing 7 relational tables (`USERS`, `FOLDERS`, `FILES`, `FILE_PERMISSIONS`, `OPERATIONS`, `PROCESSES`, `FILE_LOCKS`).
+- **Unified Web Interface:** Responsive single-page application featuring a dedicated Project Landing Page, Overview Dashboard, File Explorer, Process Monitor, Scheduler, Lock Manager, Deadlock Centre, and Activity Log.
+=======
 **ConflictCore** brings together a web-based file management interface, a backend service layer, an operating system simulation module, and a relational database layer.
 
 The system is designed to demonstrate:
+2ab5b8536caf98b0b6596c3475560387a630a286
 
 - File and folder management through a web interface.
 - Backend processing of file operations.
@@ -112,6 +124,16 @@ ConflictCore follows a modular architecture:
 
 | Area | Technologies |
 |---|---|
+<<<<<<< HEAD
+| Frontend | HTML5, CSS3, ES6+ JavaScript, Responsive SPA |
+| Backend API | Node.js (ESM), Hono web framework, `@hono/node-server` |
+| Concurrency & Auth | `bcryptjs` password hashing, token-based sessions |
+| Database | MySQL 8.0 with `mysql2/promise` connection pooling & transactions |
+| OS Module | In-memory CPU scheduler, exclusive lock manager, wait-for cycle detector |
+| Storage Layer | Multipart file streaming, staged disk persistence in `backend/storage/` |
+| Automated Testing | Node.js native test runner (`node --test`), 34 OS tests + 11 integration tests |
+| Development Tools | Git, PowerShell, Visual Studio Code |
+=======
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Node.js, Express.js |
 | Database | MySQL, SQL |
@@ -119,6 +141,7 @@ ConflictCore follows a modular architecture:
 | API communication | HTTP / REST |
 | Testing | Node.js test scripts and Python verification scripts |
 | Development tools | Visual Studio Code, Git, GitHub |
+>>>>>>> 2ab5b8536caf98b0b6596c3475560387a630a286
 
 Refer to the individual `package.json` files and project configuration for the exact dependency versions.
 
@@ -271,6 +294,11 @@ SHOW DATABASES;
 
 Select the database before running schema statements:
 
+<<<<<<< HEAD
+### 5. Start the unified application
+
+Run the application entry point from the project root:
+=======
 ```sql
 USE conflictcore_test_db;
 ```
@@ -293,11 +321,36 @@ npm start
 ```
 
 If `npm start` is not defined, inspect the available scripts:
+>>>>>>> 2ab5b8536caf98b0b6596c3475560387a630a286
 
 ```bash
-npm run
+node server.js
 ```
 
+<<<<<<< HEAD
+The unified Hono server starts immediately on port **3000**:
+- **REST APIs:** `http://localhost:3000/api/...`
+- **Interactive Web App:** `http://localhost:3000/`
+- Automatic storage directory initialization (`backend/storage/`)
+- Persistent queued process restoration from MySQL
+
+### 6. Access the application
+
+Open your browser to:
+```text
+http://localhost:3000
+```
+- The interface opens to the **ConflictCore Project Landing Page**.
+- Click **"Sign In"** or use the **1-Click Quick Demo Login** buttons:
+  - 👑 **Admin**: `admin_super` / `admin123`
+  - 💻 **Developer**: `shubham_k` / `password123`
+  - 🤝 **Collaborator**: `jahnvi_s` / `password123`
+- Or click **"Create New Account"** to register a new user with bcrypt-hashed credentials.
+
+## Testing and Verification
+
+ConflictCore includes a comprehensive test suite covering both OS scheduling/deadlock algorithms and live full-stack API flows.
+=======
 Use the development script configured by the project, if available.
 
 ### Start the Frontend
@@ -353,8 +406,51 @@ For the implementation walkthrough, see [`docs/DBMS_WALKTHROUGH.md`](docs/DBMS_W
 ConflictCore contains tests for OS functionality, backend behavior, and integration workflows.
 
 ### Run the OS Module Tests
+>>>>>>> 2ab5b8536caf98b0b6596c3475560387a630a286
 
+### 1. OS Kernel Unit Tests (34 tests)
+Validates CPU scheduling (FCFS, SJF, Priority), tie-breaking, lock acquisition/waiting queues, and Wait-For graph cycle detection with automated victim abortion:
 ```bash
+
+node --test backend/os/tests/*.test.js
+```
+
+### 2. Full-Stack Integration Tests (11 tests)
+Validates health check, static frontend serving, bcrypt registration/login, folder CRUD with cycle prevention, file root move, algorithm switching, lock/deadlock states, version history, conflict detection, and `CREATE_BRANCH` conflict resolution:
+```bash
+node --test backend/tests/integration.test.js
+```
+
+Before considering a feature complete, verify the frontend, API, database, and relevant OS behavior together. A passing unit test does not necessarily prove that the entire application works end-to-end.
+
+## API Documentation
+
+The backend API is organized into modular Hono route files mounted under `/api`:
+
+| Route module | Base Path | Key Endpoints & Capabilities |
+|---|---|---|
+| `routes/auth.routes.js` | `/api/auth` | `POST /register`, `POST /login` (bcrypt hashing, session tokens), `POST /logout` |
+| `routes/file.routes.js` | `/api/files` | `GET /` (list), `POST /upload` (multipart stage), `GET /:id/download`, `PUT /:id` (rename/move to root), `DELETE /:id`, `GET /:id/versions` (revision history), `GET /:id/conflicts` (active lock contention), `POST /:id/resolve-conflict` (`KEEP_CURRENT`, `ACCEPT_INCOMING`, `CREATE_BRANCH`) |
+| `routes/folder.routes.js` | `/api/folders` | `GET /` (hierarchy), `POST /`, `PUT /:id` (rename/move with cycle prevention), `DELETE /:id` (safe child relocation) |
+| `routes/operation.routes.js` | `/api/operations` | `GET /` (audit log), `POST /` (queue operation), `POST /:id/execute` (submit to OS kernel) |
+| `routes/os.routes.js` | `/api` | `GET /processes` (states & metrics), `POST /processes/dispatch` (CPU tick), `PUT /scheduler/algorithm` (FCFS, SJF, PRIORITY), `GET /locks` (holders & FIFO queues), `GET /deadlocks` (Wait-For cycle detection & recovery victim) |
+| `routes/test.routes.js` | `/api/test` | Subsystem integration diagnostics |
+
+## Development Workflow
+
+The project uses Git for version control and GitHub for collaboration.
+
+A typical feature workflow is:
+
+1. Create a feature branch from the intended base branch.
+2. Implement the change in the relevant module.
+3. Run the applicable tests.
+4. Review the changes and check that no secrets or generated files are included.
+5. Commit and push the branch.
+6. Open a pull request and describe the implementation, testing, and known limitations.
+
+Example:
+=======
 cd backend/os
 npm test
 ```
@@ -373,6 +469,7 @@ Use the test script configured in `backend/package.json`.
 ### Database Verification
 
 Review the database verification instructions in `db/README.md` before running:
+ 2ab5b8536caf98b0b6596c3475560387a630a286
 
 ```bash
 python db/verify.py

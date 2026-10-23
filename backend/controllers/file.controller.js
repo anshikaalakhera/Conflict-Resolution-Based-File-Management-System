@@ -4,7 +4,10 @@ import {
     createNewFile,
     updateExistingFile,
     deleteFileById,
-    createUploadedFileRecord
+    createUploadedFileRecord,
+    getFileVersions,
+    getFileConflicts,
+    resolveFileConflict
 } from '../services/file.service.js';
 
 import {
@@ -116,7 +119,10 @@ export const uploadFile = async (c) => {
 
         storedFile = await saveFile(file);
 
-        const ownerId = 1;
+        const ownerId = Number(body.owner_id || body.userId || 1);
+        const folderId = (body.folder_id != null && body.folder_id !== '' && body.folder_id !== 'root')
+            ? Number(body.folder_id)
+            : null;
 
         const operation = await createOperation({
             user_id: ownerId,
@@ -127,7 +133,8 @@ export const uploadFile = async (c) => {
                 stagedFilePath: storedFile.path,
                 originalName: storedFile.originalName,
                 fileSize: storedFile.size,
-                mimeType: storedFile.type || 'application/octet-stream'
+                mimeType: storedFile.type || 'application/octet-stream',
+                folderId: folderId
             }
         });
 
@@ -213,5 +220,62 @@ export const downloadFile = async (c) => {
             message: 'Failed to download file',
             error: error.message
         }, 500);
+    }
+};
+
+export const getFileVersionsHandler = async (c) => {
+    try {
+        const id = Number(c.req.param('id'));
+        const result = await getFileVersions(id);
+
+        if (!result) {
+            return c.json({ message: 'File not found' }, 404);
+        }
+
+        return c.json({
+            message: 'File versions retrieved successfully',
+            ...result
+        });
+    } catch (error) {
+        console.error('Error retrieving file versions:', error);
+        return c.json({ message: 'Failed to retrieve file versions', error: error.message }, 500);
+    }
+};
+
+export const getFileConflictsHandler = async (c) => {
+    try {
+        const id = Number(c.req.param('id'));
+        const result = await getFileConflicts(id);
+
+        if (!result) {
+            return c.json({ message: 'File not found' }, 404);
+        }
+
+        return c.json({
+            message: 'File conflict status retrieved successfully',
+            ...result
+        });
+    } catch (error) {
+        console.error('Error retrieving file conflicts:', error);
+        return c.json({ message: 'Failed to retrieve file conflicts', error: error.message }, 500);
+    }
+};
+
+export const resolveFileConflictHandler = async (c) => {
+    try {
+        const id = Number(c.req.param('id'));
+        const body = await c.req.json();
+        const strategy = body.strategy || 'KEEP_CURRENT';
+        const resolvedByUserId = Number(body.user_id || 1);
+
+        const result = await resolveFileConflict(id, { strategy, resolvedByUserId });
+
+        return c.json({
+            message: result.message,
+            ...result
+        });
+    } catch (error) {
+        console.error('Error resolving file conflict:', error);
+        return c.json({ message: 'Failed to resolve file conflict', error: error.message }, 500);
     }
 };
