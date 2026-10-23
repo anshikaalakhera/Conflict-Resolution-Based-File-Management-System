@@ -691,6 +691,13 @@ async function apiRequest(endpoint, options = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Intercept 409 Conflict — surface the conflict resolution modal automatically
+    if (res.status === 409 && data.conflict && data.conflict.file_id) {
+      const fileId = data.conflict.file_id;
+      toast(`⚠️ Conflict detected on file #${fileId}. Choose a resolution strategy.`);
+      // Open conflict modal asynchronously; rethrow so callers can react too
+      setTimeout(() => openConflictModal(fileId), 100);
+    }
     const err = new Error(data.message || data.error || `HTTP ${res.status}`);
     err.status = res.status;
     err.data = data;
@@ -1852,54 +1859,108 @@ async function openVersionsModal(fileId) {
 
   modalBack.classList.add('open');
   titleEl.textContent = 'Loading File Versions...';
-  bodyEl.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted)">Retrieving version history from DBMS operations log...</div>';
+  bodyEl.innerHTML = '<div style="padding:28px;text-align:center;color:var(--muted)">Retrieving version history from FILE_VERSIONS table...</div>';
 
   try {
     const data = await apiRequest(`/files/${fileId}/versions`);
     titleEl.textContent = `Version History: ${data.file.file_name}`;
 
+    // New response shape: data.versions = real FILE_VERSIONS rows
+    //   { version_id, version_number, author_name, is_current, change_summary,
+    //     file_size_bytes, mime_type, checksum, created_at }
+    // data.operations = operation history (legacy, still shown below)
     const versions = data.versions || [];
-    if (!versions.length) {
-      bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No operations recorded for this file yet.</div>';
+    const operations = data.operations || [];
+
+    if (!versions.length && !operations.length) {
+      bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No version history recorded for this file yet.</div>';
       return;
     }
 
+    const versionRows = versions.map(v => {
+      const isCurrent = v.is_current;
+      const summary = v.change_summary || (v.version_number === 1 ? 'Initial version' : 'Content updated');
+      const restoreBtn = (!isCurrent && currentUser)
+        ? `<button onclick="restoreFileVersion(${fileId},${v.version_number})" style="margin-top:6px;padding:3px 10px;font-size:11px;border-radius:6px;border:1px solid var(--purple,#7c3aed);background:#fff;color:var(--purple,#7c3aed);cursor:pointer;">⏪ Restore</button>`
+        : '';
+      return `
+        <div class="version-card" style="${isCurrent ? 'border-left:3px solid #7c3aed;' : ''}">
+          <div class="version-tag" style="${isCurrent ? 'background:#7c3aed;color:#fff;' : ''}">v${v.version_number}${isCurrent ? ' ★' : ''}</div>
+          <div class="version-meta">
+            <div class="version-head">
+              <span style="font-weight:700;color:var(--ink)">
+                ${isCurrent ? '✅ Current' : '🕓 Archived'} — 👤 ${esc(v.author_name || 'System')}
+              </span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <small style="color:var(--muted)">${formatDate(v.created_at, true)}</small>
+              </div>
+            </div>
+            <div class="version-detail">📝 ${esc(summary)}${v.file_size_bytes ? ' · ' + formatSize(v.file_size_bytes) : ''}</div>
+            ${restoreBtn}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const opRows = operations.length ? `
+      <details style="margin-top:18px;font-size:13px">
+        <summary style="cursor:pointer;font-weight:600;color:var(--muted);padding:6px 0">
+          📋 Operation History (${operations.length} entries)
+        </summary>
+        <div class="version-timeline" style="margin-top:8px">
+          ${operations.map(v => {
+            const details = v.details || {};
+            let detailsText = '';
+            if (typeof details === 'object' && Object.keys(details).length) {
+              detailsText = Object.entries(details).map(([k, val]) => `${k}: ${val}`).join(' · ');
+            } else if (typeof details === 'string') {
+              detailsText = details;
+            }
+            return `
+              <div class="version-card">
+                <div class="version-tag" style="background:#e2e8f0;color:#475569">op</div>
+                <div class="version-meta">
+                  <div class="version-head">
+                    <span style="font-weight:700;color:var(--ink)">${esc(v.operation_type || v.op_type || 'OP')} by 👤 ${esc(v.author_name || 'System')}</span>
+                    <div style="display:flex;align-items:center;gap:6px">
+                      ${pill(v.status)}
+                      <small style="color:var(--muted)">${formatDate(v.created_at, true)}</small>
+                    </div>
+                  </div>
+                  ${detailsText ? `<div class="version-detail">📝 ${esc(detailsText)}</div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </details>
+    ` : '';
+
     bodyEl.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fc;border-radius:10px;margin-bottom:14px;font-size:12px">
-        <div><strong>Total revisions:</strong> ${data.total_versions}</div>
+        <div><strong>File versions:</strong> ${data.total_versions}</div>
         <div><strong>Status:</strong> ${pill(data.file.status)}</div>
         <div><strong>Size:</strong> ${formatSize(data.file.file_size_bytes)}</div>
       </div>
-      <div class="version-timeline">
-        ${versions.map(v => {
-          const details = v.details || {};
-          let detailsText = '';
-          if (typeof details === 'object' && Object.keys(details).length) {
-            detailsText = Object.entries(details).map(([k, val]) => `${k}: ${val}`).join(' · ');
-          } else if (typeof details === 'string') {
-            detailsText = details;
-          }
-
-          return `
-            <div class="version-card">
-              <div class="version-tag">v${v.version_number}</div>
-              <div class="version-meta">
-                <div class="version-head">
-                  <span style="font-weight:700;color:var(--ink)">${esc(v.operation_type)} by 👤 ${esc(v.author_name || 'System')}</span>
-                  <div style="display:flex;align-items:center;gap:6px">
-                    ${pill(v.status)}
-                    <small style="color:var(--muted)">${formatDate(v.created_at, true)}</small>
-                  </div>
-                </div>
-                ${detailsText ? `<div class="version-detail">📝 ${esc(detailsText)}</div>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
+      <div class="version-timeline">${versionRows}</div>
+      ${opRows}
     `;
   } catch (err) {
     bodyEl.innerHTML = `<div style="padding:16px;background:#fff2f4;color:var(--red);border-radius:10px">Failed to load versions: ${esc(err.message)}</div>`;
+  }
+}
+
+async function restoreFileVersion(fileId, versionNumber) {
+  if (!currentUser) { toast('You must be signed in to restore a version.'); return; }
+  if (!confirm(`Restore file to version v${versionNumber}? This will create a new version.`)) return;
+  try {
+    toast(`Restoring to v${versionNumber}...`);
+    const res = await apiRequest(`/files/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' });
+    toast(`✓ ${res.message || `Restored to v${versionNumber} successfully.`}`);
+    openVersionsModal(fileId); // refresh
+    await loadFiles();
+  } catch (err) {
+    toast(`Restore failed: ${err.message}`);
   }
 }
 
@@ -1912,6 +1973,7 @@ window.closeConflictModal = closeConflictModal;
 window.submitConflictResolution = submitConflictResolution;
 window.openVersionsModal = openVersionsModal;
 window.closeVersionsModal = closeVersionsModal;
+window.restoreFileVersion = restoreFileVersion;
 
 // ---- Quick Demo Logins ----
 
