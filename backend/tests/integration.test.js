@@ -487,9 +487,16 @@ test('Integration: File Version Tracking — successive updates', async () => {
 
 // ─── Test 12: Conflict Resolution — CREATE_BRANCH (lock-based) ───────────────
 test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
+    // Create a real fixture file in storage/ so CREATE_BRANCH can physically copy it
+    const stamp = Date.now();
+    const fixtureName = `conflict_eval_test_${stamp}.txt`;
+    const fixturePath = path.join(process.cwd(), 'storage', fixtureName);
+    await fs.writeFile(fixturePath, Buffer.from('conflict_eval fixture content for branch test'));
+
     const [fileInsert] = await pool.query(
         `INSERT INTO FILES (file_name, folder_id, owner_id, file_size_bytes, file_path, mime_type, status)
-         VALUES ('conflict_eval_test.txt', 1, 1, 512, '/test/conflict_eval_test.txt', 'text/plain', 'LOCKED')`
+         VALUES (?, 1, 1, 512, ?, 'text/plain', 'LOCKED')`,
+        [fixtureName, fixturePath]
     );
     const testFileId = fileInsert.insertId;
 
@@ -540,14 +547,23 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
         assert.equal(resolveData.strategy, 'CREATE_BRANCH');
         assert.ok(resolveData.branchedFile);
         assert.ok(resolveData.branchedFile.file_id);
-        assert.ok(resolveData.branchedFile.file_name.includes('conflict_eval_test_branch'));
+        assert.ok(
+            resolveData.branchedFile.file_name.includes('_branch_'),
+            `Branch file name should include "_branch_", got: ${resolveData.branchedFile.file_name}`
+        );
 
+        // Verify the branch file record is in DB and ACTIVE
         const [branchRows] = await pool.query(
-            'SELECT file_id, file_name, status FROM FILES WHERE file_id = ?',
+            'SELECT file_id, file_name, file_path, status FROM FILES WHERE file_id = ?',
             [resolveData.branchedFile.file_id]
         );
         assert.equal(branchRows.length, 1);
         assert.equal(branchRows[0].status, 'ACTIVE');
+
+        // Verify the physical branch file actually exists on disk
+        let branchFileExists = false;
+        try { await fs.access(branchRows[0].file_path); branchFileExists = true; } catch {}
+        assert.ok(branchFileExists, 'Branched physical file must exist on disk');
 
         const [waiterLockRows] = await pool.query(
             'SELECT lock_status FROM FILE_LOCKS WHERE lock_id = ?', [lock2.insertId]
@@ -555,6 +571,7 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
         assert.equal(waiterLockRows[0].lock_status, 'RELEASED');
 
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [resolveData.branchedFile.file_id]);
+        try { await fs.unlink(branchRows[0].file_path); } catch {}
         await pool.query('DELETE FROM FILES WHERE file_id = ?', [resolveData.branchedFile.file_id]);
     } finally {
         await pool.query('DELETE FROM FILE_LOCKS WHERE lock_id IN (?, ?)', [lock1.insertId, lock2.insertId]);
@@ -562,6 +579,8 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
         await pool.query('DELETE FROM OPERATIONS WHERE operation_id IN (?, ?)', [op1.insertId, op2.insertId]);
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [testFileId]);
         await pool.query('DELETE FROM FILES WHERE file_id = ?', [testFileId]);
+        // Clean up fixture file (branch copy deleted above in try block)
+        try { await fs.unlink(fixturePath); } catch {}
     }
 });
 
