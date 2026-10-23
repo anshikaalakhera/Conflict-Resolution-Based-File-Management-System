@@ -4,16 +4,32 @@
  * and robust error diagnostics.
  */
 
-const mysql = require('mysql2/promise');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+import mysql from 'mysql2/promise';
+import path from 'path';
+import fs from 'fs';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const backendEnv = path.resolve(__dirname, '../../.env');
+const rootEnv = path.resolve(__dirname, '../../../.env');
+
+if (fs.existsSync(backendEnv)) {
+  dotenv.config({ path: backendEnv });
+} else if (fs.existsSync(rootEnv)) {
+  dotenv.config({ path: rootEnv });
+} else {
+  dotenv.config();
+}
 
 const config = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306', 10),
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'conflictcore_db',
+  password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
+  database: process.env.DB_NAME || 'conflictcore_test_db',
   waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS !== 'false',
   connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
   queueLimit: parseInt(process.env.DB_QUEUE_LIMIT || '0', 10),
@@ -82,14 +98,23 @@ async function closePool() {
   }
 }
 
-module.exports = {
+const dbConfig = {
+  host: config.host,
+  port: config.port,
+  database: config.database,
+  user: config.user,
+};
+
+export {
   getPool,
   testConnection,
   closePool,
-  config: {
-    host: config.host,
-    port: config.port,
-    database: config.database,
-    user: config.user,
-  },
+  dbConfig as config,
+};
+
+export default {
+  getPool,
+  testConnection,
+  closePool,
+  config: dbConfig,
 };
