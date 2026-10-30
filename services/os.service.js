@@ -5,6 +5,11 @@ import {
     readStoredFile,
     deleteStoredFile
 } from './storage.service.js';
+import {
+    updateFileContent,
+    deleteFileById,
+    getFileById as getFileRecordById
+} from './file.service.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -20,7 +25,9 @@ const VALID_OPERATIONS = new Set([
 const EXECUTABLE_OPERATIONS = new Set([
     'UPLOAD',
     'DOWNLOAD',
-    'MOVE'
+    'MOVE',
+    'EDIT',
+    'DELETE'
 ]);
 
 const mapProcessState = (state) => {
@@ -864,6 +871,210 @@ export const dispatchNextProcess = async () => {
                 process: completedProcess
             };
         }
+
+        /*
+         * EDIT — update file content with version tracking
+         */
+        if (operationType === 'EDIT') {
+            const fileId = operation.file_id;
+            if (!fileId) {
+                throw new Error('EDIT requires a valid file_id');
+            }
+
+            const stagedFilePath = details.stagedFilePath
+                ? path.resolve(String(details.stagedFilePath))
+                : null;
+
+            dispatchedProcess = osKernel.dispatch();
+            if (!dispatchedProcess || dispatchedProcess.id !== candidate.id) {
+                throw new Error('OS dispatch did not return the expected process');
+            }
+
+            await connection.query(
+                `UPDATE PROCESSES SET state = 'RUNNING', started_at = COALESCE(started_at, CURRENT_TIMESTAMP) WHERE process_id = ?`,
+                [databaseProcessId]
+            );
+            await connection.query(
+                `UPDATE OPERATIONS SET status = 'EXECUTING' WHERE operation_id = ?`,
+                [operationId]
+            );
+
+            // Advance OS clock
+            const burstTime = getOsProcessBurstTime(dispatchedProcess);
+            osKernel.clock.advance(burstTime);
+
+            // If a staged file is provided, perform versioned content update
+            if (stagedFilePath) {
+                try {
+                    const fileStats = await fs.stat(stagedFilePath);
+                    // Release connection before file service call (it acquires its own)
+                    await connection.commit();
+                    transactionOpen = false;
+
+                    const result = await updateFileContent(fileId, {
+                        file_path: stagedFilePath,
+                        file_size_bytes: fileStats.size,
+                        mime_type: details.mimeType || 'application/octet-stream',
+                        base_version_number: details.base_version_number || null,
+                        user_id: operation.user_id,
+                        change_summary: details.change_summary || 'Edited via OS scheduler'
+                    });
+
+                    // Re-open connection for final state updates
+                    connection = await pool.getConnection();
+                    await connection.beginTransaction();
+                    transactionOpen = true;
+
+                    if (result.conflict) {
+                        // Mark as completed with conflict note
+                        osKernel.complete(dispatchedProcess.id);
+                        await connection.query(
+                            `UPDATE PROCESSES SET state = 'TERMINATED', finished_at = CURRENT_TIMESTAMP WHERE process_id = ?`,
+                            [databaseProcessId]
+                        );
+                        await connection.query(
+                            `UPDATE OPERATIONS SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP,
+                             details = JSON_SET(COALESCE(details, '{}'), '$.conflictDetected', true, '$.conflictId', ?)
+                             WHERE operation_id = ?`,
+                            [result.conflict.conflict_id, operationId]
+                        );
+                        await connection.commit();
+                        transactionOpen = false;
+
+                        return {
+                            success: true,
+                            status: 'COMPLETED',
+                            operationId,
+                            databaseProcessId,
+                            osProcessId: dispatchedProcess.id,
+                            fileId,
+                            conflict: result.conflict,
+                            message: result.conflict.message
+                        };
+                    }
+                } catch (editErr) {
+                    osKernel.fail(dispatchedProcess.id, editErr.message);
+                    if (!transactionOpen) {
+                        connection = await pool.getConnection();
+                        await connection.beginTransaction();
+                        transactionOpen = true;
+                    }
+                    await connection.query(
+                        `UPDATE PROCESSES SET state = 'KILLED', finished_at = CURRENT_TIMESTAMP WHERE process_id = ?`,
+                        [databaseProcessId]
+                    );
+                    await connection.query(
+                        `UPDATE OPERATIONS SET status = 'FAILED', completed_at = CURRENT_TIMESTAMP WHERE operation_id = ?`,
+                        [operationId]
+                    );
+                    await connection.commit();
+                    transactionOpen = false;
+                    throw editErr;
+                }
+            }
+
+            // Complete the process
+            const completedProcess = osKernel.complete(dispatchedProcess.id);
+
+            await connection.query(
+                `UPDATE PROCESSES SET state = 'TERMINATED', finished_at = CURRENT_TIMESTAMP WHERE process_id = ?`,
+                [databaseProcessId]
+            );
+            await connection.query(
+                `UPDATE OPERATIONS SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP WHERE operation_id = ?`,
+                [operationId]
+            );
+
+            await connection.commit();
+            transactionOpen = false;
+
+            return {
+                success: true,
+                status: 'COMPLETED',
+                operationId,
+                databaseProcessId,
+                osProcessId: dispatchedProcess.id,
+                fileId,
+                process: completedProcess
+            };
+        }
+
+        /*
+         * DELETE — remove file from database and disk
+         */
+        if (operationType === 'DELETE') {
+            const fileId = operation.file_id;
+            if (!fileId) {
+                throw new Error('DELETE requires a valid file_id');
+            }
+
+            dispatchedProcess = osKernel.dispatch();
+            if (!dispatchedProcess || dispatchedProcess.id !== candidate.id) {
+                throw new Error('OS dispatch did not return the expected process');
+            }
+
+            await connection.query(
+                `UPDATE PROCESSES SET state = 'RUNNING', started_at = COALESCE(started_at, CURRENT_TIMESTAMP) WHERE process_id = ?`,
+                [databaseProcessId]
+            );
+            await connection.query(
+                `UPDATE OPERATIONS SET status = 'EXECUTING' WHERE operation_id = ?`,
+                [operationId]
+            );
+
+            // Advance OS clock
+            const burstTime = getOsProcessBurstTime(dispatchedProcess);
+            osKernel.clock.advance(burstTime);
+
+            // Get the file record
+            const [fileRows] = await connection.query(
+                'SELECT file_id, file_name, file_path FROM FILES WHERE file_id = ?',
+                [fileId]
+            );
+
+            if (fileRows.length) {
+                const file = fileRows[0];
+                // Delete physical file (best-effort)
+                try { await deleteStoredFile(file.file_path); } catch {}
+                // Delete version files
+                const [versions] = await connection.query(
+                    'SELECT file_path FROM FILE_VERSIONS WHERE file_id = ? AND file_path != ?',
+                    [fileId, file.file_path]
+                );
+                for (const v of versions) {
+                    try { await deleteStoredFile(v.file_path); } catch {}
+                }
+                // Delete DB record (cascades to versions, permissions, locks)
+                await connection.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+            }
+
+            // Complete the process
+            const completedProcess = osKernel.complete(dispatchedProcess.id);
+
+            await connection.query(
+                `UPDATE PROCESSES SET state = 'TERMINATED', finished_at = CURRENT_TIMESTAMP WHERE process_id = ?`,
+                [databaseProcessId]
+            );
+            await connection.query(
+                `UPDATE OPERATIONS SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP, file_id = NULL WHERE operation_id = ?`,
+                [operationId]
+            );
+
+            await connection.commit();
+            transactionOpen = false;
+
+            return {
+                success: true,
+                status: 'COMPLETED',
+                operationId,
+                databaseProcessId,
+                osProcessId: dispatchedProcess.id,
+                fileId,
+                fileName: fileRows.length ? fileRows[0].file_name : null,
+                process: completedProcess
+            };
+        }
+
 
         /*
          * DOWNLOAD

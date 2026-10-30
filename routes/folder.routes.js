@@ -1,12 +1,19 @@
 import { Hono } from 'hono';
 import pool from '../config/db.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const folderRoutes = new Hono();
 
-// GET /api/folders - List all folders with owner details
+// Enforce authentication on all folder endpoints
+folderRoutes.use('*', requireAuth);
+
+// GET /api/folders - List folders accessible to the authenticated user
 folderRoutes.get('/', async (c) => {
     try {
-        const [folders] = await pool.query(`
+        const user = c.get('user');
+        const isAdmin = user.role === 'ADMIN';
+
+        let query = `
             SELECT
                 f.folder_id,
                 f.folder_name,
@@ -17,8 +24,17 @@ folderRoutes.get('/', async (c) => {
                 u.username AS owner_name
             FROM FOLDERS f
             JOIN USERS u ON f.owner_id = u.user_id
-            ORDER BY f.folder_name ASC
-        `);
+        `;
+        const params = [];
+
+        if (!isAdmin) {
+            query += ` WHERE f.owner_id = ? `;
+            params.push(user.user_id);
+        }
+
+        query += ` ORDER BY f.folder_name ASC `;
+
+        const [folders] = await pool.query(query, params);
 
         return c.json({
             message: 'Folders retrieved successfully',
@@ -26,7 +42,6 @@ folderRoutes.get('/', async (c) => {
         });
     } catch (error) {
         console.error('Error retrieving folders:', error);
-
         return c.json({
             message: 'Failed to retrieve folders',
             error: error.message
@@ -34,13 +49,16 @@ folderRoutes.get('/', async (c) => {
     }
 });
 
-// GET /api/folders/:id - Get specific folder details, its subfolders and files
+// GET /api/folders/:id - Get specific folder details, its subfolders and accessible files
 folderRoutes.get('/:id', async (c) => {
     try {
         const id = Number(c.req.param('id'));
         if (isNaN(id)) {
             return c.json({ message: 'Invalid folder ID' }, 400);
         }
+
+        const user = c.get('user');
+        const isAdmin = user.role === 'ADMIN';
 
         const [folders] = await pool.query(`
             SELECT
@@ -62,8 +80,13 @@ folderRoutes.get('/:id', async (c) => {
 
         const folder = folders[0];
 
-        // Fetch subfolders
-        const [subfolders] = await pool.query(`
+        // Access check: only owner or administrator may view folder contents
+        if (!isAdmin && folder.owner_id !== user.user_id) {
+            return c.json({ message: 'Access denied: you do not have permission to access this folder' }, 403);
+        }
+
+        // Fetch subfolders accessible to user
+        let subfolderQuery = `
             SELECT
                 f.folder_id,
                 f.folder_name,
@@ -75,26 +98,49 @@ folderRoutes.get('/:id', async (c) => {
             FROM FOLDERS f
             JOIN USERS u ON f.owner_id = u.user_id
             WHERE f.parent_folder_id = ?
-            ORDER BY f.folder_name ASC
-        `, [id]);
+        `;
+        const subfolderParams = [id];
+        if (!isAdmin) {
+            subfolderQuery += ` AND f.owner_id = ? `;
+            subfolderParams.push(user.user_id);
+        }
+        subfolderQuery += ` ORDER BY f.folder_name ASC `;
+        const [subfolders] = await pool.query(subfolderQuery, subfolderParams);
 
-        // Fetch files directly inside this folder
-        const [files] = await pool.query(`
-            SELECT
-                file_id,
-                file_name,
-                folder_id,
-                owner_id,
-                file_size_bytes,
-                file_path,
-                mime_type,
-                status,
-                created_at,
-                updated_at
-            FROM FILES
-            WHERE folder_id = ?
-            ORDER BY created_at DESC
-        `, [id]);
+        // Fetch files inside this folder accessible to user
+        let filesQuery;
+        let filesParams;
+
+        if (isAdmin) {
+            filesQuery = `
+                SELECT
+                    file_id, file_name, folder_id, owner_id,
+                    file_size_bytes, file_path, mime_type, status,
+                    created_at, updated_at
+                FROM FILES
+                WHERE folder_id = ?
+                ORDER BY created_at DESC
+            `;
+            filesParams = [id];
+        } else {
+            filesQuery = `
+                SELECT
+                    f.file_id, f.file_name, f.folder_id, f.owner_id,
+                    f.file_size_bytes, f.file_path, f.mime_type, f.status,
+                    f.created_at, f.updated_at
+                FROM FILES f
+                LEFT JOIN FILE_PERMISSIONS fp
+                       ON fp.file_id = f.file_id
+                      AND fp.user_id = ?
+                      AND (fp.expires_at IS NULL OR fp.expires_at > NOW())
+                WHERE f.folder_id = ?
+                  AND (f.owner_id = ? OR fp.user_id = ?)
+                ORDER BY f.created_at DESC
+            `;
+            filesParams = [user.user_id, id, user.user_id, user.user_id];
+        }
+
+        const [files] = await pool.query(filesQuery, filesParams);
 
         return c.json({
             message: 'Folder details retrieved successfully',
@@ -115,9 +161,13 @@ folderRoutes.get('/:id', async (c) => {
 folderRoutes.post('/', async (c) => {
     try {
         const body = await c.req.json();
+        const user = c.get('user');
         const folderName = typeof body.folder_name === 'string' ? body.folder_name.trim() : '';
         const parentFolderId = (body.parent_folder_id != null && body.parent_folder_id !== '') ? Number(body.parent_folder_id) : null;
-        const ownerId = Number(body.owner_id || 1);
+
+        // Owner ID is strictly derived from the authenticated session
+        const ownerId = user.user_id;
+        const isAdmin = user.role === 'ADMIN';
 
         if (!folderName) {
             return c.json({
@@ -128,13 +178,20 @@ folderRoutes.post('/', async (c) => {
         // Validate parent_folder_id if provided
         if (parentFolderId != null) {
             const [parent] = await pool.query(
-                'SELECT folder_id FROM FOLDERS WHERE folder_id = ?',
+                'SELECT folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
                 [parentFolderId]
             );
             if (!parent || parent.length === 0) {
                 return c.json({
                     message: `Parent folder #${parentFolderId} does not exist`
                 }, 400);
+            }
+
+            // User must own the parent folder or be admin
+            if (!isAdmin && parent[0].owner_id !== user.user_id) {
+                return c.json({
+                    message: 'Access denied: cannot create subfolders inside another user\'s folder'
+                }, 403);
             }
         }
 
@@ -159,7 +216,6 @@ folderRoutes.post('/', async (c) => {
         }, 201);
     } catch (error) {
         console.error('Error creating folder:', error);
-
         return c.json({
             message: 'Failed to create folder',
             error: error.message
@@ -176,7 +232,7 @@ folderRoutes.put('/:id', async (c) => {
         }
 
         const [existing] = await pool.query(
-            'SELECT folder_id, folder_name, parent_folder_id FROM FOLDERS WHERE folder_id = ?',
+            'SELECT folder_id, folder_name, parent_folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
             [id]
         );
 
@@ -184,8 +240,15 @@ folderRoutes.put('/:id', async (c) => {
             return c.json({ message: 'Folder not found' }, 404);
         }
 
-        const body = await c.req.json();
         const currentFolder = existing[0];
+        const user = c.get('user');
+        const isAdmin = user.role === 'ADMIN';
+
+        if (!isAdmin && currentFolder.owner_id !== user.user_id) {
+            return c.json({ message: 'Access denied: only owner or administrator can edit this folder' }, 403);
+        }
+
+        const body = await c.req.json();
 
         let newName = currentFolder.folder_name;
         if (body.folder_name !== undefined) {
@@ -205,8 +268,20 @@ folderRoutes.put('/:id', async (c) => {
             return c.json({ message: 'A folder cannot be its own parent' }, 400);
         }
 
-        // Prevent cycles in folder hierarchy
+        // Validate target parent folder
         if (newParentId != null) {
+            const [targetParent] = await pool.query(
+                'SELECT folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
+                [newParentId]
+            );
+            if (!targetParent || targetParent.length === 0) {
+                return c.json({ message: `Target parent folder #${newParentId} does not exist` }, 400);
+            }
+            if (!isAdmin && targetParent[0].owner_id !== user.user_id) {
+                return c.json({ message: 'Access denied: cannot move folder into another user\'s folder' }, 403);
+            }
+
+            // Prevent cycles in folder hierarchy
             let cursor = newParentId;
             while (cursor != null) {
                 if (cursor === id) {
@@ -259,7 +334,7 @@ folderRoutes.delete('/:id', async (c) => {
         }
 
         const [existing] = await pool.query(
-            'SELECT folder_id, folder_name, parent_folder_id FROM FOLDERS WHERE folder_id = ?',
+            'SELECT folder_id, folder_name, parent_folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
             [id]
         );
 
@@ -268,6 +343,13 @@ folderRoutes.delete('/:id', async (c) => {
         }
 
         const target = existing[0];
+        const user = c.get('user');
+        const isAdmin = user.role === 'ADMIN';
+
+        if (!isAdmin && target.owner_id !== user.user_id) {
+            return c.json({ message: 'Access denied: only owner or administrator can delete this folder' }, 403);
+        }
+
         const newParent = target.parent_folder_id;
 
         // Safely reassign child folders and files to target's parent folder (or null for root)

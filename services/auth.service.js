@@ -2,7 +2,29 @@ import pool from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
-// In-memory active session store
+/**
+ * ---------------------------------------------------------------------------
+ * ConflictCore Session Management Architecture Note
+ * ---------------------------------------------------------------------------
+ * Active sessions are maintained in an in-memory Map (`sessions`) for low-latency
+ * token-to-user lookups during request lifecycle.
+ *
+ * Current Design Characteristics:
+ * 1. O(1) in-memory lookup via 256-bit cryptographically secure random tokens.
+ * 2. Tokens are never persisted in plain text in logs or client-facing responses
+ *    beyond the initial authentication handshake.
+ * 3. Passwords are securely hashed with bcrypt (salt rounds = 10).
+ * 4. User data stored in sessions contains only safe fields (user_id, username,
+ *    email, role, status); password hashes are strictly excluded.
+ *
+ * Production Upgrade Path:
+ * - For multi-instance horizontal scaling, the in-memory Map can be replaced by a
+ *   Redis cluster or database-backed session table (e.g., USER_SESSIONS table)
+ *   with TTL expiry. For this single-node academic deployment, in-memory sessions
+ *   provide deterministic isolation, fast execution, and zero external dependency.
+ * - Server restart gracefully invalidates active tokens, requiring re-authentication.
+ * ---------------------------------------------------------------------------
+ */
 const sessions = new Map();
 
 /**
