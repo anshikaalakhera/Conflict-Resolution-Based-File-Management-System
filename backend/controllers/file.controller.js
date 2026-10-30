@@ -25,6 +25,7 @@ import {
 
 import { createOperation } from '../services/operation.service.js';
 import { canAccessFile } from '../middleware/auth.js';
+import pool from '../config/db.js';
 
 export const getFiles = async (c) => {
     try {
@@ -68,6 +69,22 @@ export const createFile = async (c) => {
         if (user) {
             body.owner_id = user.user_id;
         }
+
+        // Validate target folder if specified
+        if (body.folder_id != null && body.folder_id !== '' && body.folder_id !== 'root') {
+            const folderId = Number(body.folder_id);
+            const [targetFolder] = await pool.query(
+                'SELECT folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
+                [folderId]
+            );
+            if (!targetFolder || targetFolder.length === 0) {
+                return c.json({ message: `Target folder #${folderId} does not exist` }, 400);
+            }
+            if (user && user.role !== 'ADMIN' && targetFolder[0].owner_id !== user.user_id) {
+                return c.json({ message: 'Access denied: cannot place file into another user\'s folder' }, 403);
+            }
+        }
+
         const file = await createNewFile(body);
         return c.json({ message: 'File created successfully', file }, 201);
     } catch (error) {
@@ -119,6 +136,20 @@ export const updateFile = async (c) => {
         }
 
         // Metadata-only update (rename, move, status change)
+        if (body.folder_id !== undefined && body.folder_id !== null && body.folder_id !== '' && body.folder_id !== 'root') {
+            const targetFolderId = Number(body.folder_id);
+            const [targetFolder] = await pool.query(
+                'SELECT folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
+                [targetFolderId]
+            );
+            if (!targetFolder || targetFolder.length === 0) {
+                return c.json({ message: `Target folder #${targetFolderId} does not exist` }, 400);
+            }
+            if (user && user.role !== 'ADMIN' && targetFolder[0].owner_id !== user.user_id) {
+                return c.json({ message: 'Access denied: cannot move file into another user\'s folder' }, 403);
+            }
+        }
+
         const file = await updateExistingFile(id, body);
         if (!file) return c.json({ message: 'File not found' }, 404);
         return c.json({ message: 'File updated successfully', file });
@@ -142,6 +173,20 @@ export const uploadFile = async (c) => {
         const ownerId = user ? user.user_id : Number(body.owner_id || body.userId || 1);
         const folderId = (body.folder_id != null && body.folder_id !== '' && body.folder_id !== 'root')
             ? Number(body.folder_id) : null;
+
+        // Check target folder ownership
+        if (folderId != null) {
+            const [targetFolder] = await pool.query(
+                'SELECT folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
+                [folderId]
+            );
+            if (!targetFolder || targetFolder.length === 0) {
+                return c.json({ message: `Target folder #${folderId} does not exist` }, 400);
+            }
+            if (user && user.role !== 'ADMIN' && targetFolder[0].owner_id !== user.user_id) {
+                return c.json({ message: 'Access denied: cannot upload file into another user\'s folder' }, 403);
+            }
+        }
 
         // Check if this is an update to an existing file (re-upload)
         const existingFileId = body.file_id ? Number(body.file_id) : null;

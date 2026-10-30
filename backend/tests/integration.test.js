@@ -105,14 +105,14 @@ test('Integration: Authentication - Seed Demo User Login', async () => {
 
 // ─── Test 5: Folder Hierarchy & CRUD with Cycle Prevention ───────────────────
 test('Integration: Folder Hierarchy & CRUD with Cycle Prevention', async () => {
+    const adminToken = await login('admin_super', 'admin123');
     const stamp = Date.now();
     const parentName = `Folder_Parent_${stamp}`;
     const childName = `Folder_Child_${stamp}`;
 
-    const createParentRes = await fetch(`${BASE_URL}/folders`, {
+    const createParentRes = await apiAs(adminToken, '/folders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_name: parentName, parent_folder_id: null, owner_id: 1 })
+        body: JSON.stringify({ folder_name: parentName, parent_folder_id: null })
     });
     assert.equal(createParentRes.status, 201);
     const parentData = await createParentRes.json();
@@ -120,54 +120,50 @@ test('Integration: Folder Hierarchy & CRUD with Cycle Prevention', async () => {
     assert.equal(parentData.folder.folder_name, parentName);
     assert.equal(parentData.folder.parent_folder_id, null);
 
-    const createChildRes = await fetch(`${BASE_URL}/folders`, {
+    const createChildRes = await apiAs(adminToken, '/folders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_name: childName, parent_folder_id: parentId, owner_id: 1 })
+        body: JSON.stringify({ folder_name: childName, parent_folder_id: parentId })
     });
     assert.equal(createChildRes.status, 201);
     const childData = await createChildRes.json();
     const childId = childData.folder.folder_id;
     assert.equal(childData.folder.parent_folder_id, parentId);
 
-    const getParentRes = await fetch(`${BASE_URL}/folders/${parentId}`);
+    const getParentRes = await apiAs(adminToken, `/folders/${parentId}`);
     assert.equal(getParentRes.status, 200);
     const parentDetails = await getParentRes.json();
     assert.equal(parentDetails.folder.folder_id, parentId);
     assert.ok(parentDetails.subfolders.some(sf => sf.folder_id === childId));
 
-    const cycleRes = await fetch(`${BASE_URL}/folders/${parentId}`, {
+    const cycleRes = await apiAs(adminToken, `/folders/${parentId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ parent_folder_id: childId })
     });
     assert.equal(cycleRes.status, 400);
     const cycleErr = await cycleRes.json();
     assert.ok(cycleErr.message.includes('cycle'));
 
-    const renameRes = await fetch(`${BASE_URL}/folders/${childId}`, {
+    const renameRes = await apiAs(adminToken, `/folders/${childId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder_name: `${childName}_Renamed` })
     });
     assert.equal(renameRes.status, 200);
     const renamed = await renameRes.json();
     assert.equal(renamed.folder.folder_name, `${childName}_Renamed`);
 
-    const delChildRes = await fetch(`${BASE_URL}/folders/${childId}`, { method: 'DELETE' });
+    const delChildRes = await apiAs(adminToken, `/folders/${childId}`, { method: 'DELETE' });
     assert.equal(delChildRes.status, 200);
 
-    const delParentRes = await fetch(`${BASE_URL}/folders/${parentId}`, { method: 'DELETE' });
+    const delParentRes = await apiAs(adminToken, `/folders/${parentId}`, { method: 'DELETE' });
     assert.equal(delParentRes.status, 200);
 });
 
 // ─── Test 6: File Move to Root ────────────────────────────────────────────────
 test('Integration: File Move to Root (Verifying COALESCE fix)', async () => {
     const adminToken = await login('admin_super', 'admin123');
-    const folderRes = await fetch(`${BASE_URL}/folders`, {
+    const folderRes = await apiAs(adminToken, '/folders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_name: `TempFolder_${Date.now()}`, owner_id: 1 })
+        body: JSON.stringify({ folder_name: `TempFolder_${Date.now()}` })
     });
     const folderData = await folderRes.json();
     const tempFolderId = folderData.folder.folder_id;
@@ -1150,6 +1146,186 @@ test('Integration: T30 KEEP_CURRENT preserves current file on disk and verifies 
         try { await fs.unlink(v2Path); } catch {}
         try { await fs.unlink(v3Path); } catch {}
     }
+});
+
+// ─── Test 31: Unauthenticated POST /folders returns 401 ──────────────────────
+test('Integration: T31 Unauthenticated folder creation returns 401 Unauthorized', async () => {
+    const stamp = Date.now();
+    const res = await fetch(`${BASE_URL}/folders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_name: `Unauth_${stamp}` })
+    });
+    assert.equal(res.status, 401, 'Unauthenticated folder creation must return 401');
+
+    // Confirm folder was not created in database
+    const [rows] = await pool.query('SELECT folder_id FROM FOLDERS WHERE folder_name = ?', [`Unauth_${stamp}`]);
+    assert.equal(rows.length, 0, 'No folder should be created without authentication');
+});
+
+// ─── Test 32: Authenticated Folder Creation Ignores Spoofed owner_id ─────────
+test('Integration: T32 Authenticated folder creation ignores spoofed owner_id', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const stamp = Date.now();
+    const folderName = `ShubhamFolder_${stamp}`;
+
+    const res = await apiAs(shubhamToken, '/folders', {
+        method: 'POST',
+        body: JSON.stringify({ folder_name: folderName, owner_id: 999 })
+    });
+    assert.equal(res.status, 201);
+    const data = await res.json();
+    assert.equal(data.folder.owner_id, 2, 'Folder owner_id must be authenticated user ID (2), not 999');
+
+    const [dbRow] = await pool.query('SELECT owner_id FROM FOLDERS WHERE folder_id = ?', [data.folder.folder_id]);
+    assert.equal(dbRow[0].owner_id, 2, 'Database row stores authenticated user ID');
+
+    await pool.query('DELETE FROM FOLDERS WHERE folder_id = ?', [data.folder.folder_id]);
+});
+
+// ─── Test 33: User A Cannot List User B's Private Folders ────────────────────
+test('Integration: T33 Folder listing is isolated by authenticated user', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const sRes = await apiAs(shubhamToken, '/folders');
+    assert.equal(sRes.status, 200);
+    const sFolders = (await sRes.json()).folders;
+
+    const aRes = await apiAs(avniToken, '/folders');
+    assert.equal(aRes.status, 200);
+    const aFolders = (await aRes.json()).folders;
+
+    // Shubham should only see folders he owns (owner_id = 2)
+    for (const f of sFolders) {
+        assert.equal(f.owner_id, 2, `Shubham sees folder with owner_id=${f.owner_id}`);
+    }
+    // Avni should only see folders she owns (owner_id = 3)
+    for (const f of aFolders) {
+        assert.equal(f.owner_id, 3, `Avni sees folder with owner_id=${f.owner_id}`);
+    }
+});
+
+// ─── Test 34: User A Cannot Retrieve User B's Private Folder by ID ───────────
+test('Integration: T34 Accessing another user private folder returns 403 Forbidden', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    // Shubham creates a private folder
+    const stamp = Date.now();
+    const createRes = await apiAs(shubhamToken, '/folders', {
+        method: 'POST',
+        body: JSON.stringify({ folder_name: `Shubham_Secret_${stamp}` })
+    });
+    const folderId = (await createRes.json()).folder.folder_id;
+
+    try {
+        // Avni attempts to read Shubham's folder
+        const avniGet = await apiAs(avniToken, `/folders/${folderId}`);
+        assert.equal(avniGet.status, 403, 'Avni must be forbidden from viewing Shubham folder');
+    } finally {
+        await pool.query('DELETE FROM FOLDERS WHERE folder_id = ?', [folderId]);
+    }
+});
+
+// ─── Test 35: User A Cannot Update or Delete User B's Folders ────────────────
+test('Integration: T35 User A cannot rename, move, or delete User B folders', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const createRes = await apiAs(shubhamToken, '/folders', {
+        method: 'POST',
+        body: JSON.stringify({ folder_name: `Shubham_Protected_${stamp}` })
+    });
+    const folderId = (await createRes.json()).folder.folder_id;
+
+    try {
+        // Avni attempts to rename Shubham's folder
+        const renameRes = await apiAs(avniToken, `/folders/${folderId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ folder_name: 'Hacked_Name' })
+        });
+        assert.equal(renameRes.status, 403, 'Avni cannot update Shubham folder');
+
+        // Avni attempts to delete Shubham's folder
+        const deleteRes = await apiAs(avniToken, `/folders/${folderId}`, {
+            method: 'DELETE'
+        });
+        assert.equal(deleteRes.status, 403, 'Avni cannot delete Shubham folder');
+    } finally {
+        await pool.query('DELETE FROM FOLDERS WHERE folder_id = ?', [folderId]);
+    }
+});
+
+// ─── Test 36: Nested Folder Creation Respects Authorization ──────────────────
+test('Integration: T36 User A cannot create a subfolder inside User B folder', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const createRes = await apiAs(shubhamToken, '/folders', {
+        method: 'POST',
+        body: JSON.stringify({ folder_name: `Shubham_Parent_${stamp}` })
+    });
+    const parentId = (await createRes.json()).folder.folder_id;
+
+    try {
+        // Avni attempts to create a child folder inside Shubham's parent folder
+        const nestedRes = await apiAs(avniToken, '/folders', {
+            method: 'POST',
+            body: JSON.stringify({
+                folder_name: `Avni_Unauthorized_Child_${stamp}`,
+                parent_folder_id: parentId
+            })
+        });
+        assert.equal(nestedRes.status, 403, 'Cannot create child folder inside another user folder');
+    } finally {
+        await pool.query('DELETE FROM FOLDERS WHERE folder_id = ?', [parentId]);
+    }
+});
+
+// ─── Test 37: User A Cannot Move File into User B's Private Folder ────────────
+test('Integration: T37 Moving a file into another user folder returns 403 Forbidden', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const createF = await apiAs(shubhamToken, '/folders', {
+        method: 'POST',
+        body: JSON.stringify({ folder_name: `Shubham_Vault_${stamp}` })
+    });
+    const shubhamVaultId = (await createF.json()).folder.folder_id;
+
+    // Avni creates a file
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('avni_doc.txt', 3, 10, 'avni_doc.txt', 'text/plain', 'ACTIVE')`,
+    );
+    const avniFileId = ins.insertId;
+
+    try {
+        // Avni attempts to move her file into Shubham's private folder
+        const moveRes = await apiAs(avniToken, `/files/${avniFileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ folder_id: shubhamVaultId })
+        });
+        assert.equal(moveRes.status, 403, 'Cannot move file into another user folder');
+    } finally {
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [avniFileId]);
+        await pool.query('DELETE FROM FOLDERS WHERE folder_id = ?', [shubhamVaultId]);
+    }
+});
+
+// ─── Test 38: Admin Can View and Manage All Folders ──────────────────────────
+test('Integration: T38 Admin can list and access all folders across users', async () => {
+    const adminToken = await login('admin_super', 'admin123');
+    const res = await apiAs(adminToken, '/folders');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+
+    const [allDbFolders] = await pool.query('SELECT COUNT(*) AS cnt FROM FOLDERS');
+    assert.equal(data.folders.length, allDbFolders[0].cnt, 'Admin sees all system folders');
 });
 
 test.after(async () => {
