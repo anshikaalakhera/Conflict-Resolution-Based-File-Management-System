@@ -1,7 +1,19 @@
 import { Hono } from 'hono';
 import pool from '../config/db.js';
+import { getUserByToken } from '../services/auth.service.js';
 
 const folderRoutes = new Hono();
+
+const getAuthUser = (c) => {
+    const authHeader = c.req.header('Authorization') || '';
+    let token = null;
+    if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7).trim();
+    } else {
+        token = c.req.query('token') || null;
+    }
+    return token ? getUserByToken(token) : null;
+};
 
 // GET /api/folders - List all folders with owner details
 folderRoutes.get('/', async (c) => {
@@ -115,9 +127,10 @@ folderRoutes.get('/:id', async (c) => {
 folderRoutes.post('/', async (c) => {
     try {
         const body = await c.req.json();
+        const user = getAuthUser(c);
         const folderName = typeof body.folder_name === 'string' ? body.folder_name.trim() : '';
         const parentFolderId = (body.parent_folder_id != null && body.parent_folder_id !== '') ? Number(body.parent_folder_id) : null;
-        const ownerId = Number(body.owner_id || 1);
+        const ownerId = user ? user.user_id : Number(body.owner_id || 1);
 
         if (!folderName) {
             return c.json({
@@ -176,7 +189,7 @@ folderRoutes.put('/:id', async (c) => {
         }
 
         const [existing] = await pool.query(
-            'SELECT folder_id, folder_name, parent_folder_id FROM FOLDERS WHERE folder_id = ?',
+            'SELECT folder_id, folder_name, parent_folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
             [id]
         );
 
@@ -184,8 +197,13 @@ folderRoutes.put('/:id', async (c) => {
             return c.json({ message: 'Folder not found' }, 404);
         }
 
-        const body = await c.req.json();
         const currentFolder = existing[0];
+        const user = getAuthUser(c);
+        if (user && user.role !== 'ADMIN' && currentFolder.owner_id !== user.user_id) {
+            return c.json({ message: 'Access denied: only owner or administrator can edit this folder' }, 403);
+        }
+
+        const body = await c.req.json();
 
         let newName = currentFolder.folder_name;
         if (body.folder_name !== undefined) {
@@ -259,7 +277,7 @@ folderRoutes.delete('/:id', async (c) => {
         }
 
         const [existing] = await pool.query(
-            'SELECT folder_id, folder_name, parent_folder_id FROM FOLDERS WHERE folder_id = ?',
+            'SELECT folder_id, folder_name, parent_folder_id, owner_id FROM FOLDERS WHERE folder_id = ?',
             [id]
         );
 
@@ -268,6 +286,11 @@ folderRoutes.delete('/:id', async (c) => {
         }
 
         const target = existing[0];
+        const user = getAuthUser(c);
+        if (user && user.role !== 'ADMIN' && target.owner_id !== user.user_id) {
+            return c.json({ message: 'Access denied: only owner or administrator can delete this folder' }, 403);
+        }
+
         const newParent = target.parent_folder_id;
 
         // Safely reassign child folders and files to target's parent folder (or null for root)

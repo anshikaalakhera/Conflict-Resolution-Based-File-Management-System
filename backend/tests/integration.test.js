@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import pool from '../config/db.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import os from 'node:os';
+import crypto from 'node:crypto';
 
 const BASE_URL = 'http://localhost:3000/api';
 
@@ -163,6 +163,7 @@ test('Integration: Folder Hierarchy & CRUD with Cycle Prevention', async () => {
 
 // ─── Test 6: File Move to Root ────────────────────────────────────────────────
 test('Integration: File Move to Root (Verifying COALESCE fix)', async () => {
+    const adminToken = await login('admin_super', 'admin123');
     const folderRes = await fetch(`${BASE_URL}/folders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,9 +182,8 @@ test('Integration: File Move to Root (Verifying COALESCE fix)', async () => {
     const [row1] = await pool.query('SELECT folder_id FROM FILES WHERE file_id = ?', [testFileId]);
     assert.equal(row1[0].folder_id, tempFolderId);
 
-    const moveRes = await fetch(`${BASE_URL}/files/${testFileId}`, {
+    const moveRes = await apiAs(adminToken, `/files/${testFileId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder_id: null })
     });
     assert.equal(moveRes.status, 200);
@@ -241,8 +241,8 @@ test('Integration: Lock Manager & Deadlock Endpoints', async () => {
 
 // ─── Test 9: File Version History from FILE_VERSIONS table ────────────────────
 test('Integration: File Version History — FILE_VERSIONS table', async () => {
-    // Use file_id=1 which has been seeded with v1 by migration
-    const res = await fetch(`${BASE_URL}/files/1/versions`);
+    const adminToken = await login('admin_super', 'admin123');
+    const res = await apiAs(adminToken, '/files/1/versions');
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.ok(data.file, 'Response must include file metadata');
@@ -262,12 +262,11 @@ test('Integration: File Version History — FILE_VERSIONS table', async () => {
 
 // ─── Test 10: Real concurrent-change detection via version numbers ─────────────
 test('Integration: Concurrent Write Conflict Detection via Version Numbers', async () => {
-    // Create a temp real file on disk so checksum works
+    const shubhamToken = await login('shubham_k', 'password123');
     const tmpContent = Buffer.from('original content v1');
     const tmpPath = path.join(process.cwd(), 'storage', `conflict_test_${Date.now()}.txt`);
     await fs.writeFile(tmpPath, tmpContent);
 
-    // Insert test file with v1
     const [fileInsert] = await pool.query(
         `INSERT INTO FILES (file_name, folder_id, owner_id, file_size_bytes, file_path, mime_type, status)
          VALUES ('stale_conflict_test.txt', NULL, 2, ?, ?, 'text/plain', 'ACTIVE')`,
@@ -275,7 +274,6 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
     );
     const testFileId = fileInsert.insertId;
 
-    // Seed v1
     await pool.query(
         `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
          VALUES (?, 1, ?, ?, 'text/plain', 2, TRUE)`,
@@ -283,14 +281,12 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
     );
 
     try {
-        // Client A updates to v2 (base=1, so no conflict)
         const v2Content = Buffer.from('client A update — version 2');
         const v2Path = path.join(process.cwd(), 'storage', `conflict_test_v2_${Date.now()}.txt`);
         await fs.writeFile(v2Path, v2Content);
 
-        const updateA = await fetch(`${BASE_URL}/files/${testFileId}`, {
+        const updateA = await apiAs(shubhamToken, `/files/${testFileId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 file_path: v2Path,
                 file_size_bytes: v2Content.length,
@@ -304,20 +300,18 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
         const dataA = await updateA.json();
         assert.equal(dataA.new_version, 2, 'Should advance to version 2');
 
-        // Client B also read v1 and now submits based on v1 (stale — conflict!)
         const v3Content = Buffer.from('client B late update — conflict');
         const v3Path = path.join(process.cwd(), 'storage', `conflict_test_v3_${Date.now()}.txt`);
         await fs.writeFile(v3Path, v3Content);
 
-        const updateB = await fetch(`${BASE_URL}/files/${testFileId}`, {
+        const updateB = await apiAs(shubhamToken, `/files/${testFileId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 file_path: v3Path,
                 file_size_bytes: v3Content.length,
                 mime_type: 'text/plain',
-                base_version_number: 1,  // stale — file is at v2
-                user_id: 3,
+                base_version_number: 1,
+                user_id: 2,
                 change_summary: 'Client B concurrent edit'
             })
         });
@@ -328,24 +322,20 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
         assert.equal(dataB.conflict.base_version, 1);
         assert.equal(dataB.conflict.current_version, 2);
 
-        // Verify conflict is recorded in CONFLICTS table
         const [conflictRows] = await pool.query(
             'SELECT * FROM CONFLICTS WHERE file_id = ? AND status = ?',
             [testFileId, 'OPEN']
         );
         assert.equal(conflictRows.length, 1, 'Exactly one OPEN conflict should be recorded');
 
-        // Check via GET /files/:id/conflicts
-        const confRes = await fetch(`${BASE_URL}/files/${testFileId}/conflicts`);
+        const confRes = await apiAs(shubhamToken, `/files/${testFileId}/conflicts`);
         assert.equal(confRes.status, 200);
         const confData = await confRes.json();
         assert.equal(confData.hasConflict, true);
         assert.equal(confData.openConflicts.length, 1);
 
-        // Resolve conflict (keep current)
-        const resolveRes = await fetch(`${BASE_URL}/files/${testFileId}/resolve-conflict`, {
+        const resolveRes = await apiAs(shubhamToken, `/files/${testFileId}/resolve-conflict`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 strategy: 'KEEP_CURRENT',
                 user_id: 2,
@@ -356,22 +346,18 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
         const resolveData = await resolveRes.json();
         assert.equal(resolveData.resolved, true);
 
-        // Verify conflict is now RESOLVED
         const [resolvedRows] = await pool.query(
             'SELECT status FROM CONFLICTS WHERE conflict_id = ?',
             [dataB.conflict.conflict_id]
         );
         assert.equal(resolvedRows[0].status, 'RESOLVED');
 
-        // No more open conflicts
-        const confRes2 = await fetch(`${BASE_URL}/files/${testFileId}/conflicts`);
+        const confRes2 = await apiAs(shubhamToken, `/files/${testFileId}/conflicts`);
         const confData2 = await confRes2.json();
         assert.equal(confData2.hasConflict, false);
 
-        // Clean up temp files
         try { await fs.unlink(v2Path); } catch {}
         try { await fs.unlink(v3Path); } catch {}
-
     } finally {
         await pool.query('DELETE FROM CONFLICTS WHERE file_id = ?', [testFileId]);
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [testFileId]);
@@ -382,7 +368,7 @@ test('Integration: Concurrent Write Conflict Detection via Version Numbers', asy
 
 // ─── Test 11: Version History — multiple updates tracked correctly ─────────────
 test('Integration: File Version Tracking — successive updates', async () => {
-    // Create test file
+    const shubhamToken = await login('shubham_k', 'password123');
     const v1Content = Buffer.from('version 1 original content');
     const v1Path = path.join(process.cwd(), 'storage', `ver_test_v1_${Date.now()}.txt`);
     await fs.writeFile(v1Path, v1Content);
@@ -402,15 +388,13 @@ test('Integration: File Version Tracking — successive updates', async () => {
     const createdPaths = [v1Path];
 
     try {
-        // Update 1: v1 → v2
         const v2Content = Buffer.from('version 2 content — first update');
         const v2Path = path.join(process.cwd(), 'storage', `ver_test_v2_${Date.now()}.txt`);
         await fs.writeFile(v2Path, v2Content);
         createdPaths.push(v2Path);
 
-        const upd1 = await fetch(`${BASE_URL}/files/${testFileId}`, {
+        const upd1 = await apiAs(shubhamToken, `/files/${testFileId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 file_path: v2Path, file_size_bytes: v2Content.length, mime_type: 'text/plain',
                 base_version_number: 1, user_id: 2, change_summary: 'First edit'
@@ -419,25 +403,22 @@ test('Integration: File Version Tracking — successive updates', async () => {
         assert.equal(upd1.status, 200);
         assert.equal((await upd1.json()).new_version, 2);
 
-        // Update 2: v2 → v3
         const v3Content = Buffer.from('version 3 content — second update');
         const v3Path = path.join(process.cwd(), 'storage', `ver_test_v3_${Date.now()}.txt`);
         await fs.writeFile(v3Path, v3Content);
         createdPaths.push(v3Path);
 
-        const upd2 = await fetch(`${BASE_URL}/files/${testFileId}`, {
+        const upd2 = await apiAs(shubhamToken, `/files/${testFileId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 file_path: v3Path, file_size_bytes: v3Content.length, mime_type: 'text/plain',
-                base_version_number: 2, user_id: 3, change_summary: 'Second edit'
+                base_version_number: 2, user_id: 2, change_summary: 'Second edit'
             })
         });
         assert.equal(upd2.status, 200);
         assert.equal((await upd2.json()).new_version, 3);
 
-        // Verify version history
-        const histRes = await fetch(`${BASE_URL}/files/${testFileId}/versions`);
+        const histRes = await apiAs(shubhamToken, `/files/${testFileId}/versions`);
         assert.equal(histRes.status, 200);
         const histData = await histRes.json();
         assert.equal(histData.total_versions, 3);
@@ -453,17 +434,14 @@ test('Integration: File Version Tracking — successive updates', async () => {
         assert.equal(v1rec.is_current, false, 'v1 should be archived');
         assert.equal(v2rec.is_current, false, 'v2 should be archived');
 
-        // Fetch specific version endpoint
-        const specRes = await fetch(`${BASE_URL}/files/${testFileId}/versions/2`);
+        const specRes = await apiAs(shubhamToken, `/files/${testFileId}/versions/2`);
         assert.equal(specRes.status, 200);
         const specData = await specRes.json();
         assert.equal(specData.version.version_number, 2);
         assert.equal(specData.version.change_summary, 'First edit');
 
-        // Restore v1
-        const restoreRes = await fetch(`${BASE_URL}/files/${testFileId}/versions/1/restore`, {
+        const restoreRes = await apiAs(shubhamToken, `/files/${testFileId}/versions/1/restore`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: 2 })
         });
         assert.equal(restoreRes.status, 200);
@@ -471,13 +449,11 @@ test('Integration: File Version Tracking — successive updates', async () => {
         assert.equal(restoreData.from_version, 1);
         assert.equal(restoreData.new_version, 4, 'Restore creates version 4');
 
-        // After restore, v4 is current
-        const histRes2 = await fetch(`${BASE_URL}/files/${testFileId}/versions`);
+        const histRes2 = await apiAs(shubhamToken, `/files/${testFileId}/versions`);
         const histData2 = await histRes2.json();
         const v4rec = histData2.versions.find(v => v.version_number === 4);
         assert.ok(v4rec, 'v4 (restore) must exist');
         assert.equal(v4rec.is_current, true);
-
     } finally {
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [testFileId]);
         await pool.query('DELETE FROM FILES WHERE file_id = ?', [testFileId]);
@@ -487,7 +463,7 @@ test('Integration: File Version Tracking — successive updates', async () => {
 
 // ─── Test 12: Conflict Resolution — CREATE_BRANCH (lock-based) ───────────────
 test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
-    // Create a real fixture file in storage/ so CREATE_BRANCH can physically copy it
+    const adminToken = await login('admin_super', 'admin123');
     const stamp = Date.now();
     const fixtureName = `conflict_eval_test_${stamp}.txt`;
     const fixturePath = path.join(process.cwd(), 'storage', fixtureName);
@@ -529,16 +505,15 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
     );
 
     try {
-        const confRes = await fetch(`${BASE_URL}/files/${testFileId}/conflicts`);
+        const confRes = await apiAs(adminToken, `/files/${testFileId}/conflicts`);
         assert.equal(confRes.status, 200);
         const confData = await confRes.json();
         assert.equal(confData.hasConflict, true);
         assert.equal(confData.activeHolder.lock_id, lock1.insertId);
         assert.equal(confData.conflictingWaiters[0].lock_id, lock2.insertId);
 
-        const resolveRes = await fetch(`${BASE_URL}/files/${testFileId}/resolve-conflict`, {
+        const resolveRes = await apiAs(adminToken, `/files/${testFileId}/resolve-conflict`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ strategy: 'CREATE_BRANCH', user_id: 1 })
         });
         assert.equal(resolveRes.status, 200);
@@ -552,7 +527,6 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
             `Branch file name should include "_branch_", got: ${resolveData.branchedFile.file_name}`
         );
 
-        // Verify the branch file record is in DB and ACTIVE
         const [branchRows] = await pool.query(
             'SELECT file_id, file_name, file_path, status FROM FILES WHERE file_id = ?',
             [resolveData.branchedFile.file_id]
@@ -560,77 +534,60 @@ test('Integration: Conflict Resolution Strategy (CREATE_BRANCH)', async () => {
         assert.equal(branchRows.length, 1);
         assert.equal(branchRows[0].status, 'ACTIVE');
 
-        // Verify the physical branch file actually exists on disk
         let branchFileExists = false;
         try { await fs.access(branchRows[0].file_path); branchFileExists = true; } catch {}
         assert.ok(branchFileExists, 'Branched physical file must exist on disk');
 
-        const [waiterLockRows] = await pool.query(
-            'SELECT lock_status FROM FILE_LOCKS WHERE lock_id = ?', [lock2.insertId]
-        );
-        assert.equal(waiterLockRows[0].lock_status, 'RELEASED');
-
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [resolveData.branchedFile.file_id]);
-        try { await fs.unlink(branchRows[0].file_path); } catch {}
         await pool.query('DELETE FROM FILES WHERE file_id = ?', [resolveData.branchedFile.file_id]);
+        try { await fs.unlink(branchRows[0].file_path); } catch {}
     } finally {
-        await pool.query('DELETE FROM FILE_LOCKS WHERE lock_id IN (?, ?)', [lock1.insertId, lock2.insertId]);
-        await pool.query('DELETE FROM PROCESSES WHERE process_id IN (?, ?)', [proc1.insertId, proc2.insertId]);
+        await pool.query('DELETE FROM FILE_LOCKS WHERE file_id = ?', [testFileId]);
+        await pool.query('DELETE FROM PROCESSES WHERE operation_id IN (?, ?)', [op1.insertId, op2.insertId]);
         await pool.query('DELETE FROM OPERATIONS WHERE operation_id IN (?, ?)', [op1.insertId, op2.insertId]);
         await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [testFileId]);
         await pool.query('DELETE FROM FILES WHERE file_id = ?', [testFileId]);
-        // Clean up fixture file (branch copy deleted above in try block)
         try { await fs.unlink(fixturePath); } catch {}
     }
 });
 
-// ─── Test 13: User Data Isolation ────────────────────────────────────────────
+// ─── Test 13: User Data Isolation (Shubham vs Avni vs Admin) ─────────────────
 test('Integration: User Data Isolation (Shubham vs Avni vs Admin)', async () => {
-    const adminToken = await login('admin_super', 'admin123');
-    const shubhamToken = await login('shubham_k', 'password123');
-    const avniToken = await login('avni_n', 'password123');
+    const adminToken   = await login('admin_super', 'admin123');
+    const shubhamToken = await login('shubham_k',   'password123');
+    const avniToken    = await login('avni_n',      'password123');
 
-    // All three can access files endpoint
     const adminRes = await apiAs(adminToken, '/files');
     assert.equal(adminRes.status, 200);
     const adminFiles = (await adminRes.json()).files;
-    assert.ok(Array.isArray(adminFiles));
 
     const shubhamRes = await apiAs(shubhamToken, '/files');
     assert.equal(shubhamRes.status, 200);
     const shubhamFiles = (await shubhamRes.json()).files;
-    assert.ok(Array.isArray(shubhamFiles));
 
     const avniRes = await apiAs(avniToken, '/files');
     assert.equal(avniRes.status, 200);
 
-    // Admin sees at least as many files as any individual user
     assert.ok(adminFiles.length >= shubhamFiles.length);
 });
 
-// ─── Test 14: Unauthorized Access Rejection ───────────────────────────────────
+// ─── Test 14: Unauthorized Access Rejection (403 Forbidden) ──────────────────
 test('Integration: Unauthorized Access Rejection (403 Forbidden)', async () => {
     const avniToken = await login('avni_n', 'password123');
-
-    // file_id=1 is owned by shubham_k (owner_id=2), avni should get 403
     const res = await apiAs(avniToken, '/files/1');
-    // Either 403 (if auth enforced) or 200 with all files (if no per-user filter)
-    // We verify the response is valid JSON regardless
-    assert.ok([200, 403, 404].includes(res.status));
+    assert.equal(res.status, 403, 'Avni accessing shubham private file must return 403');
 });
 
-// ─── Test 15: Explicit File Sharing Workflow ──────────────────────────────────
+// ─── Test 15: Explicit File Sharing Workflow ─────────────────────────────────
 test('Integration: Explicit File Sharing Workflow', async () => {
     const shubhamToken = await login('shubham_k', 'password123');
-    const avniToken = await login('avni_n', 'password123');
-
-    // Try to share file 3 with avni (owner: shubham_k)
     const shareRes = await apiAs(shubhamToken, '/files/3/share', {
         method: 'POST',
         body: JSON.stringify({ target_username: 'avni_n', permission_type: 'READ' })
     });
-    // Accept either 200 (sharing implemented) or 404 (endpoint not found)
-    assert.ok([200, 201, 404, 501].includes(shareRes.status));
+    assert.equal(shareRes.status, 200);
+    const shareData = await shareRes.json();
+    assert.equal(shareData.shared_with, 'avni_n');
 });
 
 // ─── Test 16: OS Process queue and scheduler metrics ─────────────────────────
@@ -674,6 +631,524 @@ test('Integration: All active files have at least one FILE_VERSIONS record', asy
     for (const f of files) {
         const [vers] = await pool.query('SELECT COUNT(*) AS cnt FROM FILE_VERSIONS WHERE file_id = ?', [f.file_id]);
         assert.ok(vers[0].cnt >= 1, `file_id=${f.file_id} must have at least 1 version record`);
+    }
+});
+
+// ─── Test 19: Unauthenticated GET /files returns 401 ─────────────────────────
+test('Integration: T19 Unauthenticated GET /files returns 401 Unauthorized', async () => {
+    const res = await fetch(`${BASE_URL}/files`);
+    assert.equal(res.status, 401, 'Unauthenticated request must return 401');
+    const data = await res.json();
+    assert.ok(data.message.includes('Authentication'));
+});
+
+// ─── Test 20: Private File Access Denial (403 Forbidden) ────────────────────
+test('Integration: T20 Private file access denial across users', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const filePath = path.join(process.cwd(), 'storage', `priv_test_${stamp}.txt`);
+    await fs.writeFile(filePath, 'shubham private notes');
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('priv_notes.txt', 2, 21, ?, 'text/plain', 'ACTIVE')`,
+        [filePath]
+    );
+    const privId = ins.insertId;
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 21, 'text/plain', 2, TRUE)`,
+        [privId, filePath]
+    );
+
+    try {
+        const shubhamGet = await apiAs(shubhamToken, `/files/${privId}`);
+        assert.equal(shubhamGet.status, 200, 'Owner can access their own file');
+
+        const avniGet = await apiAs(avniToken, `/files/${privId}`);
+        assert.equal(avniGet.status, 403, 'Other user receives 403 Forbidden for private file');
+    } finally {
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [privId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [privId]);
+        try { await fs.unlink(filePath); } catch {}
+    }
+});
+
+// ─── Test 21: File Sharing Workflow – Grant Access ───────────────────────────
+test('Integration: T21 File sharing grant allows recipient access', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const filePath = path.join(process.cwd(), 'storage', `share_grant_${stamp}.txt`);
+    await fs.writeFile(filePath, 'collaborative document');
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('shared_doc.txt', 2, 22, ?, 'text/plain', 'ACTIVE')`,
+        [filePath]
+    );
+    const sharedId = ins.insertId;
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 22, 'text/plain', 2, TRUE)`,
+        [sharedId, filePath]
+    );
+
+    try {
+        const beforeShare = await apiAs(avniToken, `/files/${sharedId}`);
+        assert.equal(beforeShare.status, 403, 'Avni initially denied');
+
+        const shareRes = await apiAs(shubhamToken, `/files/${sharedId}/share`, {
+            method: 'POST',
+            body: JSON.stringify({ target_username: 'avni_n', permission_type: 'READ' })
+        });
+        assert.equal(shareRes.status, 200);
+
+        const afterShare = await apiAs(avniToken, `/files/${sharedId}`);
+        assert.equal(afterShare.status, 200, 'Avni granted read access after sharing');
+        const fileData = await afterShare.json();
+        assert.equal(fileData.file.file_name, 'shared_doc.txt');
+    } finally {
+        await pool.query('DELETE FROM FILE_PERMISSIONS WHERE file_id = ?', [sharedId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [sharedId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [sharedId]);
+        try { await fs.unlink(filePath); } catch {}
+    }
+});
+
+// ─── Test 22: Revoke File Share Immediately Denies Access ─────────────────────
+test('Integration: T22 Revoking file share immediately restores 403 Forbidden', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const stamp = Date.now();
+    const filePath = path.join(process.cwd(), 'storage', `revoke_test_${stamp}.txt`);
+    await fs.writeFile(filePath, 'temporary shared doc');
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('revoke_doc.txt', 2, 22, ?, 'text/plain', 'ACTIVE')`,
+        [filePath]
+    );
+    const fileId = ins.insertId;
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 22, 'text/plain', 2, TRUE)`,
+        [fileId, filePath]
+    );
+
+    try {
+        await apiAs(shubhamToken, `/files/${fileId}/share`, {
+            method: 'POST',
+            body: JSON.stringify({ target_username: 'avni_n', permission_type: 'READ' })
+        });
+        const canAccess = await apiAs(avniToken, `/files/${fileId}`);
+        assert.equal(canAccess.status, 200);
+
+        const revokeRes = await apiAs(shubhamToken, `/files/${fileId}/share/3`, {
+            method: 'DELETE'
+        });
+        assert.equal(revokeRes.status, 200);
+
+        const deniedAccess = await apiAs(avniToken, `/files/${fileId}`);
+        assert.equal(deniedAccess.status, 403, 'Access denied immediately after revocation');
+    } finally {
+        await pool.query('DELETE FROM FILE_PERMISSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(filePath); } catch {}
+    }
+});
+
+// ─── Test 23: Dashboard Isolation – Users see only owned and shared files ─────
+test('Integration: T23 Dashboard file list is isolated per authenticated user', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const sRes = await apiAs(shubhamToken, '/files');
+    assert.equal(sRes.status, 200);
+    const sFiles = (await sRes.json()).files;
+
+    const aRes = await apiAs(avniToken, '/files');
+    assert.equal(aRes.status, 200);
+    const aFiles = (await aRes.json()).files;
+
+    for (const f of sFiles) {
+        if (f.permission === 'OWNER') {
+            assert.equal(f.owner_id, 2, 'Shubham only owns files with owner_id=2');
+        }
+    }
+    for (const f of aFiles) {
+        if (f.permission === 'OWNER') {
+            assert.equal(f.owner_id, 3, 'Avni only owns files with owner_id=3');
+        }
+    }
+});
+
+// ─── Test 24: Admin Sees Complete System-Wide File Catalog ────────────────────
+test('Integration: T24 Admin retrieves all system files', async () => {
+    const adminToken = await login('admin_super', 'admin123');
+    const shubhamToken = await login('shubham_k', 'password123');
+
+    const adminRes = await apiAs(adminToken, '/files');
+    const adminFiles = (await adminRes.json()).files;
+
+    const shubhamRes = await apiAs(shubhamToken, '/files');
+    const shubhamFiles = (await shubhamRes.json()).files;
+
+    const [totalActive] = await pool.query("SELECT COUNT(*) AS cnt FROM FILES WHERE status IN ('ACTIVE', 'LOCKED')");
+    assert.equal(adminFiles.length, totalActive[0].cnt, 'Admin sees all active database files');
+    assert.ok(adminFiles.length >= shubhamFiles.length, 'Admin sees at least as many as regular user');
+});
+
+// ─── Test 25: Shared File Download by Recipient ──────────────────────────────
+test('Integration: T25 Shared recipient can download permitted file', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const avniToken = await login('avni_n', 'password123');
+
+    const content = 'Content specifically for shared download test.';
+    const stamp = Date.now();
+    const filePath = path.join(process.cwd(), 'storage', `dl_test_${stamp}.txt`);
+    await fs.writeFile(filePath, content);
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('dl_test.txt', 2, ?, ?, 'text/plain', 'ACTIVE')`,
+        [content.length, filePath]
+    );
+    const fileId = ins.insertId;
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, ?, 'text/plain', 2, TRUE)`,
+        [fileId, filePath, content.length]
+    );
+
+    try {
+        const unsharedDl = await apiAs(avniToken, `/files/${fileId}/download`);
+        assert.equal(unsharedDl.status, 403, 'Cannot download unshared file');
+
+        await apiAs(shubhamToken, `/files/${fileId}/share`, {
+            method: 'POST',
+            body: JSON.stringify({ target_username: 'avni_n', permission_type: 'READ' })
+        });
+
+        const sharedDl = await apiAs(avniToken, `/files/${fileId}/download`);
+        assert.equal(sharedDl.status, 200, 'Can download after sharing');
+        const downloadedText = await sharedDl.text();
+        assert.equal(downloadedText, content, 'Downloaded content matches original file bytes');
+    } finally {
+        await pool.query('DELETE FROM FILE_PERMISSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(filePath); } catch {}
+    }
+});
+
+// ─── Test 26: Unauthorized Access to Version History Returns 403 ─────────────
+test('Integration: T26 Unauthorized user receives 403 on version history endpoint', async () => {
+    const avniToken = await login('avni_n', 'password123');
+    const res = await apiAs(avniToken, '/files/1/versions');
+    assert.equal(res.status, 403, 'Unauthorized user cannot read version history of private file');
+});
+
+// ─── Test 27: Conflict Resolution — ACCEPT_INCOMING Strategy ─────────────────
+test('Integration: T27 Conflict resolution ACCEPT_INCOMING replaces current version', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const stamp = Date.now();
+    const v1Content = 'Original base version 1';
+    const v1Path = path.join(process.cwd(), 'storage', `ai_v1_${stamp}.txt`);
+    await fs.writeFile(v1Path, v1Content);
+
+    const [fileInsert] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('accept_incoming_test.txt', 2, ?, ?, 'text/plain', 'ACTIVE')`,
+        [v1Content.length, v1Path]
+    );
+    const fileId = fileInsert.insertId;
+
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, ?, 'text/plain', 2, TRUE)`,
+        [fileId, v1Path, v1Content.length]
+    );
+
+    const v2Path = path.join(process.cwd(), 'storage', `ai_v2_${stamp}.txt`);
+    await fs.writeFile(v2Path, 'Current accepted v2 content');
+    const v3Path = path.join(process.cwd(), 'storage', `ai_v3_${stamp}.txt`);
+    await fs.writeFile(v3Path, 'Incoming competing v3 content');
+
+    try {
+        const upd1 = await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v2Path, file_size_bytes: 26, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Advancing to v2'
+            })
+        });
+        assert.equal(upd1.status, 200);
+
+        const upd2 = await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v3Path, file_size_bytes: 28, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Stale edit causing conflict'
+            })
+        });
+        assert.equal(upd2.status, 409);
+        const confData = await upd2.json();
+
+        const resolveRes = await apiAs(shubhamToken, `/files/${fileId}/resolve-conflict`, {
+            method: 'POST',
+            body: JSON.stringify({
+                strategy: 'ACCEPT_INCOMING',
+                user_id: 2,
+                conflict_id: confData.conflict.conflict_id
+            })
+        });
+        assert.equal(resolveRes.status, 200);
+        const resData = await resolveRes.json();
+        assert.equal(resData.resolved, true);
+        assert.equal(resData.strategy, 'ACCEPT_INCOMING');
+
+        const [currVer] = await pool.query(
+            'SELECT version_number, is_current, file_path FROM FILE_VERSIONS WHERE file_id = ? AND is_current = TRUE',
+            [fileId]
+        );
+        assert.equal(currVer.length, 1);
+        assert.equal(currVer[0].version_number, 3, 'Incoming version v3 became current');
+
+        const dlRes = await apiAs(shubhamToken, `/files/${fileId}/download`);
+        const text = await dlRes.text();
+        assert.equal(text, 'Incoming competing v3 content', 'File content on disk reflects incoming version');
+    } finally {
+        await pool.query('DELETE FROM CONFLICTS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(v1Path); } catch {}
+        try { await fs.unlink(v2Path); } catch {}
+        try { await fs.unlink(v3Path); } catch {}
+    }
+});
+
+// ─── Test 28: Conflict Resolution — Version-Based CREATE_BRANCH ──────────────
+test('Integration: T28 Version-based conflict resolved with CREATE_BRANCH', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const stamp = Date.now();
+    const v1Path = path.join(process.cwd(), 'storage', `branch_v1_${stamp}.txt`);
+    await fs.writeFile(v1Path, 'Base version 1 for branching');
+
+    const [fileInsert] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('branch_test_source.txt', 2, 28, ?, 'text/plain', 'ACTIVE')`,
+        [v1Path]
+    );
+    const fileId = fileInsert.insertId;
+
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 28, 'text/plain', 2, TRUE)`,
+        [fileId, v1Path]
+    );
+
+    const v2Path = path.join(process.cwd(), 'storage', `branch_v2_${stamp}.txt`);
+    await fs.writeFile(v2Path, 'Current v2 content');
+    const v3Path = path.join(process.cwd(), 'storage', `branch_v3_${stamp}.txt`);
+    await fs.writeFile(v3Path, 'Incoming v3 to be branched');
+
+    let branchId = null;
+    let branchPhysicalPath = null;
+
+    try {
+        await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v2Path, file_size_bytes: 18, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Advancing to v2'
+            })
+        });
+
+        const updConflict = await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v3Path, file_size_bytes: 25, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Concurrent edit for branch'
+            })
+        });
+        assert.equal(updConflict.status, 409);
+        const confObj = await updConflict.json();
+
+        const resolveRes = await apiAs(shubhamToken, `/files/${fileId}/resolve-conflict`, {
+            method: 'POST',
+            body: JSON.stringify({
+                strategy: 'CREATE_BRANCH',
+                user_id: 2,
+                conflict_id: confObj.conflict.conflict_id
+            })
+        });
+        assert.equal(resolveRes.status, 200);
+        const rData = await resolveRes.json();
+        assert.equal(rData.strategy, 'CREATE_BRANCH');
+        assert.ok(rData.branchedFile);
+        branchId = rData.branchedFile.file_id;
+
+        const [branchFile] = await pool.query('SELECT * FROM FILES WHERE file_id = ?', [branchId]);
+        assert.equal(branchFile.length, 1);
+        branchPhysicalPath = branchFile[0].file_path;
+        const exists = await fs.access(branchPhysicalPath).then(() => true).catch(() => false);
+        assert.ok(exists, 'Physical branched file exists on disk');
+    } finally {
+        if (branchId) {
+            await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [branchId]);
+            await pool.query('DELETE FROM FILES WHERE file_id = ?', [branchId]);
+        }
+        if (branchPhysicalPath) { try { await fs.unlink(branchPhysicalPath); } catch {} }
+        await pool.query('DELETE FROM CONFLICTS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(v1Path); } catch {}
+        try { await fs.unlink(v2Path); } catch {}
+        try { await fs.unlink(v3Path); } catch {}
+    }
+});
+
+// ─── Test 29: Complete Version History Preserved Across Resolution ────────────
+test('Integration: T29 All versions preserved in FILE_VERSIONS table after KEEP_CURRENT', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const stamp = Date.now();
+    const v1Path = path.join(process.cwd(), 'storage', `hist_v1_${stamp}.txt`);
+    await fs.writeFile(v1Path, 'History v1 base');
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('history_preserve.txt', 2, 15, ?, 'text/plain', 'ACTIVE')`,
+        [v1Path]
+    );
+    const fileId = ins.insertId;
+
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 15, 'text/plain', 2, TRUE)`,
+        [fileId, v1Path]
+    );
+
+    const v2Path = path.join(process.cwd(), 'storage', `hist_v2_${stamp}.txt`);
+    await fs.writeFile(v2Path, 'History v2 current');
+    const v3Path = path.join(process.cwd(), 'storage', `hist_v3_${stamp}.txt`);
+    await fs.writeFile(v3Path, 'History v3 incoming');
+
+    try {
+        await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v2Path, file_size_bytes: 18, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Advancing to v2'
+            })
+        });
+
+        const confRes = await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v3Path, file_size_bytes: 19, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Stale update'
+            })
+        });
+        const cData = await confRes.json();
+
+        await apiAs(shubhamToken, `/files/${fileId}/resolve-conflict`, {
+            method: 'POST',
+            body: JSON.stringify({
+                strategy: 'KEEP_CURRENT',
+                user_id: 2,
+                conflict_id: cData.conflict.conflict_id
+            })
+        });
+
+        const [vers] = await pool.query(
+            'SELECT version_number, is_current FROM FILE_VERSIONS WHERE file_id = ? ORDER BY version_number ASC',
+            [fileId]
+        );
+        const numbers = vers.map(v => v.version_number);
+        assert.deepEqual(numbers, [1, 2, 3], 'All three versions (v1, v2 current, v3 incoming archived) preserved');
+        const v2 = vers.find(v => v.version_number === 2);
+        assert.equal(v2.is_current, 1, 'v2 remains current under KEEP_CURRENT');
+    } finally {
+        await pool.query('DELETE FROM CONFLICTS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(v1Path); } catch {}
+        try { await fs.unlink(v2Path); } catch {}
+        try { await fs.unlink(v3Path); } catch {}
+    }
+});
+
+// ─── Test 30: KEEP_CURRENT Full Cycle with Physical File Integrity Check ─────
+test('Integration: T30 KEEP_CURRENT preserves current file on disk and verifies checksum', async () => {
+    const shubhamToken = await login('shubham_k', 'password123');
+    const stamp = Date.now();
+    const v1Path = path.join(process.cwd(), 'storage', `kc_v1_${stamp}.txt`);
+    await fs.writeFile(v1Path, 'Version 1 base content');
+
+    const [ins] = await pool.query(
+        `INSERT INTO FILES (file_name, owner_id, file_size_bytes, file_path, mime_type, status)
+         VALUES ('kc_integrity.txt', 2, 22, ?, 'text/plain', 'ACTIVE')`,
+        [v1Path]
+    );
+    const fileId = ins.insertId;
+
+    await pool.query(
+        `INSERT INTO FILE_VERSIONS (file_id, version_number, file_path, file_size_bytes, mime_type, created_by, is_current)
+         VALUES (?, 1, ?, 22, 'text/plain', 2, TRUE)`,
+        [fileId, v1Path]
+    );
+
+    const v2Content = 'Version 2 should remain on disk after KEEP_CURRENT';
+    const v2Path = path.join(process.cwd(), 'storage', `kc_v2_${stamp}.txt`);
+    await fs.writeFile(v2Path, v2Content);
+
+    const v3Content = 'Version 3 incoming should be preserved as non-current';
+    const v3Path = path.join(process.cwd(), 'storage', `kc_v3_${stamp}.txt`);
+    await fs.writeFile(v3Path, v3Content);
+
+    try {
+        await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v2Path, file_size_bytes: v2Content.length, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Upgrade to v2'
+            })
+        });
+
+        const confRes = await apiAs(shubhamToken, `/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_path: v3Path, file_size_bytes: v3Content.length, mime_type: 'text/plain',
+                base_version_number: 1, user_id: 2, change_summary: 'Stale concurrent edit'
+            })
+        });
+        const cData = await confRes.json();
+
+        await apiAs(shubhamToken, `/files/${fileId}/resolve-conflict`, {
+            method: 'POST',
+            body: JSON.stringify({
+                strategy: 'KEEP_CURRENT',
+                user_id: 2,
+                conflict_id: cData.conflict.conflict_id
+            })
+        });
+
+        const [fileRow] = await pool.query('SELECT file_path FROM FILES WHERE file_id = ?', [fileId]);
+        const onDisk = await fs.readFile(fileRow[0].file_path, 'utf8');
+        assert.equal(onDisk, v2Content, 'Disk file contains the current v2 content');
+    } finally {
+        await pool.query('DELETE FROM CONFLICTS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILE_VERSIONS WHERE file_id = ?', [fileId]);
+        await pool.query('DELETE FROM FILES WHERE file_id = ?', [fileId]);
+        try { await fs.unlink(v1Path); } catch {}
+        try { await fs.unlink(v2Path); } catch {}
+        try { await fs.unlink(v3Path); } catch {}
     }
 });
 

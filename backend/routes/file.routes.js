@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { requireAuth } from '../middleware/auth.js';
 
 import {
     getFiles,
@@ -13,16 +14,27 @@ import {
     restoreFileVersionHandler,
     getFileConflictsHandler,
     resolveFileConflictHandler,
-    getOpenConflictsHandler
+    getOpenConflictsHandler,
+    shareFileHandler,
+    revokeShareHandler,
+    getFilePermissionsHandler
 } from '../controllers/file.controller.js';
 
 const fileRoutes = new Hono();
 
-// List & search
+// Protect all file endpoints with authentication
+fileRoutes.use('*', requireAuth);
+
+// List & search (filtered by user / admin)
 fileRoutes.get('/', getFiles);
 
-// Conflicts (global list)
+// Conflicts (global open list)
 fileRoutes.get('/conflicts', getOpenConflictsHandler);
+
+// File permissions and sharing
+fileRoutes.get('/:id/permissions', getFilePermissionsHandler);
+fileRoutes.post('/:id/share', shareFileHandler);
+fileRoutes.delete('/:id/share/:targetUserId', revokeShareHandler);
 
 // File-specific endpoints
 fileRoutes.get('/:id/download', downloadFile);

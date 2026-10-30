@@ -35,17 +35,72 @@ const copyPhysicalFile = async (srcPath, destSuffix) => {
 // Core CRUD
 // ---------------------------------------------------------------------------
 
-export const getAllFiles = async () => {
+/**
+ * getAllFiles(userId, role)
+ *
+ * - ADMIN role: returns every file in the database.
+ * - Regular user: returns files owned by the caller AND files explicitly
+ *   shared with the caller via FILE_PERMISSIONS (not expired).
+ *
+ * When called without arguments (e.g. from legacy internal callers or tests
+ * that do not yet pass a userId) it falls back to the old "all files" behaviour
+ * to avoid breaking existing OS-layer code that does not carry a user context.
+ */
+export const getAllFiles = async (userId, role) => {
+    // Legacy / internal callers that pass no userId get the full list
+    if (userId == null) {
+        const [rows] = await pool.query(`
+            SELECT
+                f.file_id, f.file_name, f.folder_id, f.owner_id,
+                f.file_size_bytes, f.file_path, f.mime_type, f.status,
+                f.created_at, f.updated_at,
+                COALESCE(cv.version_number, 1) AS current_version,
+                'OWNER' AS permission
+            FROM FILES f
+            LEFT JOIN FILE_VERSIONS cv ON cv.file_id = f.file_id AND cv.is_current = TRUE
+            ORDER BY f.created_at DESC
+        `);
+        return rows;
+    }
+
+    // Admin sees everything
+    if (role === 'ADMIN') {
+        const [rows] = await pool.query(`
+            SELECT
+                f.file_id, f.file_name, f.folder_id, f.owner_id,
+                f.file_size_bytes, f.file_path, f.mime_type, f.status,
+                f.created_at, f.updated_at,
+                COALESCE(cv.version_number, 1) AS current_version,
+                CASE WHEN f.owner_id = ? THEN 'OWNER' ELSE 'ADMIN_VIEW' END AS permission,
+                u.username AS owner_username
+            FROM FILES f
+            LEFT JOIN FILE_VERSIONS cv ON cv.file_id = f.file_id AND cv.is_current = TRUE
+            LEFT JOIN USERS u ON u.user_id = f.owner_id
+            ORDER BY f.created_at DESC
+        `, [userId]);
+        return rows;
+    }
+
+    // Regular user: owned files UNION shared files
     const [rows] = await pool.query(`
         SELECT
             f.file_id, f.file_name, f.folder_id, f.owner_id,
             f.file_size_bytes, f.file_path, f.mime_type, f.status,
             f.created_at, f.updated_at,
-            COALESCE(cv.version_number, 1) AS current_version
+            COALESCE(cv.version_number, 1) AS current_version,
+            CASE WHEN f.owner_id = ? THEN 'OWNER' ELSE fp.permission_type END AS permission,
+            u.username AS owner_username
         FROM FILES f
         LEFT JOIN FILE_VERSIONS cv ON cv.file_id = f.file_id AND cv.is_current = TRUE
+        LEFT JOIN FILE_PERMISSIONS fp
+               ON fp.file_id = f.file_id
+              AND fp.user_id = ?
+              AND (fp.expires_at IS NULL OR fp.expires_at > NOW())
+        LEFT JOIN USERS u ON u.user_id = f.owner_id
+        WHERE f.owner_id = ?
+           OR (fp.user_id = ? AND (fp.expires_at IS NULL OR fp.expires_at > NOW()))
         ORDER BY f.created_at DESC
-    `);
+    `, [userId, userId, userId, userId]);
     return rows;
 };
 
@@ -783,3 +838,119 @@ export const getOpenConflicts = async (fileId = null) => {
     const [rows] = await pool.query(query, fileId ? [fileId] : []);
     return rows;
 };
+
+// ---------------------------------------------------------------------------
+// File Sharing and Permissions
+// ---------------------------------------------------------------------------
+
+/**
+ * Share a file with another user by username or userId.
+ * Only owner or admin can share.
+ */
+export const shareFile = async (fileId, grantorUserId, { target_username, target_user_id, permission_type = 'READ', expires_at = null }) => {
+    const [fileRows] = await pool.query('SELECT file_id, file_name, owner_id FROM FILES WHERE file_id = ?', [fileId]);
+    if (!fileRows || fileRows.length === 0) {
+        throw new Error('File not found');
+    }
+    const file = fileRows[0];
+
+    // Check grantor role
+    const [grantorRows] = await pool.query('SELECT role FROM USERS WHERE user_id = ?', [grantorUserId]);
+    const grantorRole = grantorRows[0]?.role;
+    if (file.owner_id !== grantorUserId && grantorRole !== 'ADMIN') {
+        throw new Error('Only the file owner or an administrator can share this file');
+    }
+
+    // Find target user
+    let targetUser = null;
+    if (target_user_id) {
+        const [u] = await pool.query('SELECT user_id, username, email FROM USERS WHERE user_id = ?', [target_user_id]);
+        targetUser = u[0];
+    } else if (target_username) {
+        const [u] = await pool.query('SELECT user_id, username, email FROM USERS WHERE username = ?', [target_username.trim()]);
+        targetUser = u[0];
+    }
+
+    if (!targetUser) {
+        throw new Error('Target user not found');
+    }
+
+    if (targetUser.user_id === file.owner_id) {
+        throw new Error('Cannot share a file with its owner');
+    }
+
+    const permType = ['READ', 'WRITE', 'ADMIN_ONLY'].includes(permission_type?.toUpperCase())
+        ? permission_type.toUpperCase()
+        : 'READ';
+
+    // Insert or update permission
+    // FILE_PERMISSIONS schema: permission_id, file_id, user_id, permission_type, granted_by, granted_at, expires_at
+    const [existing] = await pool.query(
+        'SELECT permission_id FROM FILE_PERMISSIONS WHERE file_id = ? AND user_id = ?',
+        [fileId, targetUser.user_id]
+    );
+
+    if (existing && existing.length > 0) {
+        await pool.query(
+            `UPDATE FILE_PERMISSIONS
+             SET permission_type = ?, granted_by = ?, granted_at = CURRENT_TIMESTAMP, expires_at = ?
+             WHERE file_id = ? AND user_id = ?`,
+            [permType, grantorUserId, expires_at, fileId, targetUser.user_id]
+        );
+    } else {
+        await pool.query(
+            `INSERT INTO FILE_PERMISSIONS (file_id, user_id, permission_type, granted_by, expires_at)
+             VALUES (?, ?, ?, ?, ?)`,
+            [fileId, targetUser.user_id, permType, grantorUserId, expires_at]
+        );
+    }
+
+    return {
+        file_id: file.file_id,
+        file_name: file.file_name,
+        shared_with: targetUser.username,
+        target_user_id: targetUser.user_id,
+        permission_type: permType,
+        granted_by: grantorUserId
+    };
+};
+
+/**
+ * Revoke file sharing permission for a user.
+ */
+export const revokeFileShare = async (fileId, requesterUserId, targetUserId) => {
+    const [fileRows] = await pool.query('SELECT file_id, owner_id FROM FILES WHERE file_id = ?', [fileId]);
+    if (!fileRows || fileRows.length === 0) {
+        throw new Error('File not found');
+    }
+    const file = fileRows[0];
+
+    const [reqRows] = await pool.query('SELECT role FROM USERS WHERE user_id = ?', [requesterUserId]);
+    const reqRole = reqRows[0]?.role;
+    if (file.owner_id !== requesterUserId && reqRole !== 'ADMIN') {
+        throw new Error('Only the file owner or an administrator can revoke access');
+    }
+
+    const [result] = await pool.query(
+        'DELETE FROM FILE_PERMISSIONS WHERE file_id = ? AND user_id = ?',
+        [fileId, targetUserId]
+    );
+
+    return { revoked: result.affectedRows > 0 };
+};
+
+/**
+ * List permissions for a specific file.
+ */
+export const getFilePermissions = async (fileId) => {
+    const [rows] = await pool.query(
+        `SELECT fp.*, u.username, u.email, g.username AS granted_by_username
+         FROM FILE_PERMISSIONS fp
+         JOIN USERS u ON fp.user_id = u.user_id
+         LEFT JOIN USERS g ON fp.granted_by = g.user_id
+         WHERE fp.file_id = ? AND (fp.expires_at IS NULL OR fp.expires_at > NOW())`,
+        [fileId]
+    );
+    return rows;
+};
+
